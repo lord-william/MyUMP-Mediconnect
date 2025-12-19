@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Add & Manage Health Tips - MediConnect</title>
+
+    <!-- Supabase & Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      /* Custom animations */
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .tip-item {
+        animation: slideIn 0.3s ease-out;
+      }
+
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      /* Form focus states */
+      .form-input:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-indigo-100 text-[#001F3F] font-sans flex flex-col min-h-screen"
+  >
+    <!-- Navbar -->
+    <nav class="bg-white text-black shadow-lg p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a
+          href="clinicDashboard.html"
+          class="hover:scale-105 transition-transform"
+        >
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+        <div class="hidden md:flex space-x-6">
+          <a href="clinicDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="appointmentManagement.html"
+            class="hover:text-blue-600 transition"
+            >Appointments</a
+          >
+          <a
+            href="inventoryManagement.html"
+            class="hover:text-blue-600 transition"
+            >Inventory</a
+          >
+          <a
+            href="reporting&analytics.html"
+            class="hover:text-blue-600 transition"
+            >Reports</a
+          >
+          <a
+            href="staff_add_tip.html"
+            class="hover:text-blue-600 transition font-semibold border-b-2 border-blue-500"
+            >Add Tips</a
+          >
+        </div>
+        <div class="relative text-sm">
+          <span id="userName" class="mr-2 font-medium">Clinic Admin</span>
+          <button
+            id="profileBtn"
+            class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition-all hover:scale-105"
+          >
+            MC
+          </button>
+          <div
+            class="absolute right-0 mt-2 w-48 bg-white text-[#001F3F] rounded-lg shadow-xl border hidden"
+            id="profileDropdown"
+          >
+            <a
+              href="staffProfile.html"
+              class="block px-4 py-2 hover:bg-blue-50 rounded-t-lg transition"
+              >Profile Settings</a
+            >
+            <a
+              href="#"
+              id="logoutBtn"
+              class="block px-4 py-2 text-red-600 hover:bg-red-50 rounded-b-lg transition"
+              >Logout</a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <main class="flex-grow">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Page Header -->
+        <div class="text-center mb-10">
+          <h1 class="text-4xl font-bold text-[#001F3F] mb-2">
+            Health Tips Management
+          </h1>
+          <p class="text-gray-600">
+            Create, edit, and manage health tips for students
+          </p>
+        </div>
+
+        <!-- Add Tip Form -->
+        <div
+          class="w-full bg-white border border-blue-200 rounded-2xl shadow-xl p-8 mb-10"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-8 h-8 mr-3 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                ></path>
+              </svg>
+              Add Health Tip
+            </h2>
+            <a
+              href="clinicDashboard.html"
+              class="text-sm text-blue-600 hover:text-blue-800 hover:underline transition"
+              >← Back to Dashboard</a
+            >
+          </div>
+
+          <form id="tipForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  for="title"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    ></path>
+                  </svg>
+                  Title *
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  placeholder="e.g., Stay Hydrated During Exams"
+                  required
+                  maxlength="100"
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+                <div class="text-xs text-gray-500 mt-1">Max 100 characters</div>
+              </div>
+              <div>
+                <label
+                  for="category"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    ></path>
+                  </svg>
+                  Category *
+                </label>
+                <select
+                  id="category"
+                  required
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Select a category</option>
+                  <option value="General Health">General Health</option>
+                  <option value="Nutrition">Nutrition</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Mental Health">Mental Health</option>
+                  <option value="Sleep">Sleep</option>
+                  <option value="Study Tips">Study Tips</option>
+                  <option value="Prevention">Prevention</option>
+                  <option value="Emergency">Emergency</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label
+                for="message"
+                class="block text-sm font-semibold mb-2 text-gray-700"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  ></path>
+                </svg>
+                Message *
+              </label>
+              <textarea
+                id="message"
+                rows="5"
+                placeholder="Write your health tip here... Be specific and provide actionable advice."
+                required
+                maxlength="1000"
+                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none custom-scrollbar"
+              ></textarea>
+              <div class="text-xs text-gray-500 mt-1">Max 1000 characters</div>
+            </div>
+            <div class="flex gap-4">
+              <button
+                type="submit"
+                id="submitBtn"
+                class="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 transition-all font-semibold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <svg
+                  class="w-5 h-5 inline-block mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  ></path>
+                </svg>
+                Submit Tip
+              </button>
+              <button
+                type="button"
+                id="clearBtn"
+                class="bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-all font-semibold tracking-wide hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <svg
+                  class="w-5 h-5 inline-block mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+                Clear Form
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tips Display -->
+        <div
+          class="w-full bg-white border border-blue-200 rounded-2xl shadow-xl p-8"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-7 h-7 mr-3 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                ></path>
+              </svg>
+              Current Health Tips
+            </h2>
+            <div class="flex gap-2">
+              <button
+                id="refreshBtn"
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all text-sm font-medium"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
+                Refresh
+              </button>
+              <div
+                id="tipCount"
+                class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                0 tips
+              </div>
+            </div>
+          </div>
+
+          <!-- Search and Filter -->
+          <div class="mb-6">
+            <div class="flex flex-col sm:flex-row gap-4">
+              <div class="flex-1">
+                <input
+                  id="searchTips"
+                  type="text"
+                  placeholder="Search tips by title or content..."
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+              <select
+                id="filterCategory"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              >
+                <option value="">All Categories</option>
+                <option value="General Health">General Health</option>
+                <option value="Nutrition">Nutrition</option>
+                <option value="Fitness">Fitness</option>
+                <option value="Mental Health">Mental Health</option>
+                <option value="Sleep">Sleep</option>
+                <option value="Study Tips">Study Tips</option>
+                <option value="Prevention">Prevention</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            id="tipsContainer"
+            class="space-y-6 custom-scrollbar max-h-96 overflow-y-auto"
+          >
+            <div class="flex items-center justify-center py-12">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+              ></div>
+              <span class="ml-3 text-gray-600">Loading tips...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      id="contact"
+      class="bg-blue-900 text-white text-center py-6 text-sm mt-10"
+    >
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <!-- Enhanced Confirm Modal -->
+    <div
+      id="confirmModal"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-96 p-6 text-center transform transition-all"
+      >
+        <div class="mb-4">
+          <svg
+            class="mx-auto h-16 w-16 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold mb-4 text-gray-800" id="confirmMessage">
+          Are you sure?
+        </h2>
+        <div class="flex justify-center gap-4">
+          <button
+            id="confirmYes"
+            class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-all font-semibold"
+          >
+            Yes, Delete
+          </button>
+          <button
+            id="confirmNo"
+            class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-all font-semibold"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      // Profile Dropdown functionality
+      const profileBtn = document.getElementById("profileBtn");
+      const profileDropdown = document.getElementById("profileDropdown");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          profileDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (
+            !profileDropdown.contains(e.target) &&
+            !profileBtn.contains(e.target)
+          ) {
+            profileDropdown.classList.add("hidden");
+          }
+        });
+      }
+
+      // Logout functionality
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          try {
+            sessionStorage.clear();
+            localStorage.clear();
+          } catch (error) {
+            console.warn("Storage clearing failed:", error);
+          }
+          window.location.replace("landing.html");
+        });
+      }
+
+      // Clear form button functionality
+      const clearBtn = document.getElementById("clearBtn");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          const form = document.getElementById("tipForm");
+          if (form) {
+            form.reset();
+            const submitBtn = document.getElementById("submitBtn");
+            if (submitBtn) {
+              submitBtn.textContent = "Submit Tip";
+              submitBtn.classList.remove(
+                "bg-yellow-500",
+                "hover:bg-yellow-600"
+              );
+              submitBtn.classList.add("bg-blue-500", "hover:bg-blue-600");
+              delete submitBtn.dataset.editId;
+            }
+          }
+        });
+      }
+
+      // Refresh button functionality
+      const refreshBtn = document.getElementById("refreshBtn");
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", () => {
+          if (window.loadTips) {
+            window.loadTips();
+          }
+        });
+      }
+
+      // Search and filter functionality
+      function filterAndSearchTips() {
+        const searchTerm =
+          document.getElementById("searchTips")?.value.toLowerCase() || "";
+        const categoryFilter =
+          document.getElementById("filterCategory")?.value || "";
+
+        // Get allTips from the global scope (set by staff_add_tip.js)
+        const allTips = window.allTips || [];
+
+        const filteredTips = allTips.filter((tip) => {
+          const matchesSearch =
+            !searchTerm ||
+            tip.title.toLowerCase().includes(searchTerm) ||
+            tip.message.toLowerCase().includes(searchTerm) ||
+            tip.category.toLowerCase().includes(searchTerm);
+
+          const matchesCategory =
+            !categoryFilter || tip.category === categoryFilter;
+
+          return matchesSearch && matchesCategory;
+        });
+
+        if (window.renderTips) {
+          window.renderTips(filteredTips);
+        }
+        const tipCountEl = document.getElementById("tipCount");
+        if (tipCountEl) {
+          tipCountEl.textContent = `${filteredTips.length} tip${
+            filteredTips.length !== 1 ? "s" : ""
+          }`;
+        }
+      }
+
+      // Add event listeners for search and filter
+      document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("searchTips");
+        const categorySelect = document.getElementById("filterCategory");
+
+        if (searchInput) {
+          let searchTimeout;
+          searchInput.addEventListener("input", () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(filterAndSearchTips, 300);
+          });
+        }
+
+        if (categorySelect) {
+          categorySelect.addEventListener("change", filterAndSearchTips);
+        }
+      });
+
+      // Character counters
+      document.addEventListener("DOMContentLoaded", () => {
+        const titleInput = document.getElementById("title");
+        const messageInput = document.getElementById("message");
+
+        if (titleInput) {
+          titleInput.addEventListener("input", (e) => {
+            const remaining = 100 - e.target.value.length;
+            const counter = e.target.parentNode.querySelector(".text-xs");
+            if (counter) {
+              counter.textContent = `${remaining} characters remaining`;
+              counter.className =
+                remaining < 20
+                  ? "text-xs text-red-500 mt-1"
+                  : "text-xs text-gray-500 mt-1";
+            }
+          });
+        }
+
+        if (messageInput) {
+          messageInput.addEventListener("input", (e) => {
+            const remaining = 1000 - e.target.value.length;
+            const counter = e.target.parentNode.querySelector(".text-xs");
+            if (counter) {
+              counter.textContent = `${remaining} characters remaining`;
+              counter.className =
+                remaining < 100
+                  ? "text-xs text-red-500 mt-1"
+                  : "text-xs text-gray-500 mt-1";
+            }
+          });
+        }
+      });
+    </script>
+
+    <!-- Main health tips script -->
+    <script src="js/staff_add_tip.js"></script>
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

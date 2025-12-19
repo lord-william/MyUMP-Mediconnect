@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Symptom Checker - MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      /* Custom animations */
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .diagnosis-form {
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .results-appear {
+        animation: slideDown 0.3s ease-out;
+      }
+
+      .symptom-tag-appear {
+        animation: slideIn 0.2s ease-out;
+      }
+
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      /* Form focus states */
+      .form-input:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      }
+
+      /* Dropdown styling */
+      .symptom-option:hover {
+        background-color: #dbeafe;
+        transform: translateX(2px);
+      }
+
+      /* Loading states */
+      .loading-pulse {
+        animation: pulse 1.5s infinite;
+      }
+
+      /* Results card hover */
+      .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 31, 63, 0.15);
+      }
+
+      /* Confidence indicators */
+      .confidence-high {
+        border-left-color: #10b981;
+        background-color: #ecfdf5;
+      }
+      .confidence-medium {
+        border-left-color: #f59e0b;
+        background-color: #fffbeb;
+      }
+      .confidence-low {
+        border-left-color: #ef4444;
+        background-color: #fef2f2;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-indigo-100 text-[#001F3F] font-sans flex flex-col min-h-screen"
+  >
+    <!-- Navigation -->
+    <nav class="bg-white text-black shadow-lg p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a
+          href="studentDashboard.html"
+          class="hover:scale-105 transition-transform"
+        >
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+
+        <div class="hidden md:flex space-x-6">
+          <a href="studentDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a href="book_Appointment.html" class="hover:text-blue-600 transition"
+            >Appointments</a
+          >
+          <a href="contactSupport.html" class="hover:text-blue-600 transition"
+            >Support</a
+          >
+          <a
+            href="healthTips.html"
+            class="font-semibold border-b-2 border-blue-500 hover:text-blue-600 transition"
+            >AI Diagnosis</a
+          >
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- <span class="text-blue-600 font-medium">AI Diagnosis</span> -->
+          <div class="relative text-sm">
+            <span id="userName" class="mr-2 font-medium">Student</span>
+            <button
+              id="profileBtn"
+              class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition-all hover:scale-105"
+            >
+              MC
+            </button>
+            <div
+              class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded-lg shadow-xl border hidden"
+              id="profileDropdown"
+            >
+              <a
+                href="settings.html"
+                class="block px-4 py-2 hover:bg-blue-50 rounded-t-lg transition"
+                >Profile Settings</a
+              >
+              <a
+                href="#"
+                id="logoutBtn"
+                class="block px-4 py-2 text-red-600 hover:bg-red-50 rounded-b-lg transition"
+                >Logout</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div
+      id="progressOverlay"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white rounded-xl p-8 shadow-2xl flex flex-col items-center max-w-sm mx-4"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"
+        ></div>
+        <h3 class="text-lg font-semibold text-[#001F3F] mb-2">
+          AI Analysis in Progress
+        </h3>
+        <p class="text-gray-600 text-center">
+          Our AI is analyzing your symptoms...
+        </p>
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-4">
+          <div
+            class="bg-blue-500 h-2 rounded-full animate-pulse"
+            style="width: 70%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-grow">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Page Header -->
+        <div class="text-center mb-10">
+          <h1 class="text-4xl font-bold text-[#001F3F] mb-2">
+            AI Symptom Checker
+          </h1>
+          <p class="text-gray-600">
+            Advanced AI-powered health assessment and diagnosis assistance
+          </p>
+        </div>
+
+        <!-- Medical Disclaimer -->
+        <div
+          class="mb-8 bg-yellow-50 border border-yellow-200 rounded-xl shadow-md p-6"
+        >
+          <div class="flex items-start">
+            <svg
+              class="h-6 w-6 text-yellow-500 flex-shrink-0 mt-1 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <div>
+              <h3 class="text-lg font-semibold text-yellow-800 mb-2">
+                Important Medical Disclaimer
+              </h3>
+              <p class="text-yellow-700 text-sm leading-relaxed">
+                This AI tool is for informational purposes only and should not
+                replace professional medical advice, diagnosis, or treatment.
+                Always seek the advice of qualified healthcare providers with
+                any questions regarding medical conditions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Diagnosis Form -->
+        <div
+          class="diagnosis-form bg-white border border-blue-200 rounded-2xl shadow-xl p-8 mb-8"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-8 h-8 mr-3 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                ></path>
+              </svg>
+              Symptom Analysis
+            </h2>
+          </div>
+
+          <form id="symptomForm" class="space-y-6">
+            <!-- Symptom Selector -->
+            <div>
+              <label class="block text-sm font-semibold mb-2 text-gray-700">
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                Select Your Symptoms *
+              </label>
+
+              <!-- Dropdown Button -->
+              <div class="relative">
+                <button
+                  type="button"
+                  id="symptomDropdownBtn"
+                  class="form-input w-full px-4 py-3 text-left border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all flex justify-between items-center"
+                >
+                  <span class="text-gray-500" id="dropdownPlaceholder"
+                    >Choose symptoms from the list...</span
+                  >
+                  <svg
+                    class="w-5 h-5 text-gray-400 transition-transform"
+                    id="dropdownArrow"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    ></path>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div
+                  id="symptomDropdown"
+                  class="absolute z-20 w-full mt-1 bg-white border border-blue-300 rounded-lg shadow-xl hidden max-h-80 overflow-hidden"
+                >
+                  <div class="p-3 border-b border-gray-200 bg-blue-50">
+                    <input
+                      type="text"
+                      id="symptomSearch"
+                      placeholder="Search symptoms..."
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div
+                    id="symptomOptions"
+                    class="py-2 custom-scrollbar overflow-y-auto max-h-64"
+                  >
+                    <!-- Symptoms populated by JavaScript -->
+                  </div>
+                </div>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                Select one or more symptoms you're experiencing
+              </div>
+            </div>
+
+            <!-- Selected Symptoms Display -->
+            <div id="selectedSymptomsContainer" class="hidden">
+              <label class="block text-sm font-semibold mb-2 text-gray-700"
+                >Selected Symptoms:</label
+              >
+              <div
+                id="selectedSymptoms"
+                class="flex flex-wrap gap-2 p-4 border border-blue-200 rounded-lg bg-blue-50 min-h-16 transition-all"
+              >
+                <!-- Selected symptoms appear here -->
+              </div>
+            </div>
+
+            <!-- Patient Information Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  for="age"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  Age * (17-65)
+                </label>
+                <input
+                  type="number"
+                  id="age"
+                  name="age"
+                  min="17"
+                  max="65"
+                  required
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter your age"
+                />
+                <div class="text-xs text-gray-500 mt-1">
+                  Campus health services for ages 17-65
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="gender"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    ></path>
+                  </svg>
+                  Gender *
+                </label>
+                <select
+                  id="gender"
+                  name="gender"
+                  required
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+                <div class="text-xs text-gray-500 mt-1">
+                  Helps with gender-specific conditions
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-center pt-4">
+              <button
+                type="submit"
+                id="diagnoseBtn"
+                class="bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600 transition-all font-semibold tracking-wide hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <svg
+                  class="w-5 h-5 inline-block mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  ></path>
+                </svg>
+                Get AI Diagnosis
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Results Section -->
+        <div
+          id="resultsSection"
+          class="hidden results-appear bg-white border border-blue-200 rounded-2xl shadow-xl p-8"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-8 h-8 mr-3 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              AI Analysis Results
+            </h2>
+            <button
+              id="newAnalysisBtn"
+              class="hidden bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all font-medium"
+            >
+              New Analysis
+            </button>
+          </div>
+
+          <div
+            id="loadingSpinner"
+            class="flex justify-center items-center py-12 hidden"
+          >
+            <div class="text-center">
+              <div
+                class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"
+              ></div>
+              <p class="text-blue-600 font-medium">
+                Analyzing your symptoms with AI...
+              </p>
+              <p class="text-sm text-gray-500 mt-2">
+                This may take up to 30 seconds
+              </p>
+            </div>
+          </div>
+
+          <div id="diagnosisResults" class="hidden">
+            <!-- Results populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Health Tips Section -->
+        <div
+          class="mt-8 bg-white border border-green-200 rounded-xl shadow-md p-6"
+        >
+          <h3 class="text-xl font-bold text-[#001F3F] mb-4 flex items-center">
+            <svg
+              class="w-6 h-6 mr-2 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              ></path>
+            </svg>
+            Health & Wellness Tips
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700"
+          >
+            <div>
+              <h4 class="font-semibold mb-2">General Health:</h4>
+              <ul class="space-y-1">
+                <li>• Stay hydrated (8-10 glasses daily)</li>
+                <li>• Get adequate sleep (7-9 hours)</li>
+                <li>• Exercise regularly (30 min/day)</li>
+                <li>• Eat a balanced diet</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">When to Seek Help:</h4>
+              <ul class="space-y-1">
+                <li>• Severe or persistent symptoms</li>
+                <li>• Emergency situations</li>
+                <li>• Worsening conditions</li>
+                <li>• Concerns about your health</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white text-center py-6 text-sm mt-10">
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <script>
+      // Remove browser storage dependency and replace with in-memory storage
+      function getToken() {
+        try {
+          const token = sessionStorage.getItem("supabase_token");
+          if (!token) {
+            throw new Error("No authentication token found");
+          }
+          return token;
+        } catch (error) {
+          console.error("Authentication error:", error);
+          window.location.href = "401.html";
+          return null;
+        }
+      }
+
+      // Notification Functions
+      function showError(message, duration = 4000) {
+        const container = document.getElementById("errorContainer");
+        const msg = document.getElementById("errorMessage");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.error("Error:", message);
+        }
+      }
+
+      function showSuccess(message, duration = 4000) {
+        const container = document.getElementById("successContainer");
+        const msg = document.getElementById("successMessage");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.log("Success:", message);
+        }
+      }
+
+      // Application state
+      let currentUser = null;
+      let selectedSymptoms = new Set();
+
+      // Comprehensive symptom list
+      const commonSymptoms = [
+        "Abdominal cramps",
+        "Abdominal pain",
+        "Abdominal swelling",
+        "Abnormal bleeding",
+        "Acne",
+        "Ankle swelling",
+        "Anxiety",
+        "Arm weakness",
+        "Back pain",
+        "Back spasms",
+        "Backache",
+        "Bald spot",
+        "Bleeding between periods",
+        "Bloating",
+        "Blood in urine",
+        "Bloody discharge",
+        "Blurred vision",
+        "Body aches",
+        "Bone pain",
+        "Breast lump",
+        "Breast pain",
+        "Breast swelling",
+        "Breast tenderness",
+        "Central obesity",
+        "Chest pain",
+        "Chest tightness",
+        "Chills",
+        "Chronic pain",
+        "Confusion",
+        "Congestion",
+        "Cough",
+        "Coughing",
+        "Coughing blood",
+        "Cramping pain",
+        "Crown baldness",
+        "Crown thinning",
+        "Deep pelvic pain",
+        "Diarrhea",
+        "Difficulty breathing",
+        "Difficulty losing weight",
+        "Difficulty maintaining erection",
+        "Difficulty urinating",
+        "Dimpling",
+        "Dizziness",
+        "Dry mouth",
+        "Dull aching",
+        "Enlarged testicle",
+        "Epigastric pain",
+        "Erectile dysfunction",
+        "Excessive worry",
+        "Face drooping",
+        "Facial hair growth",
+        "Facial swelling",
+        "Fatigue",
+        "Fever",
+        "Foul-smelling discharge",
+        "Frequent urination",
+        "Groin pain",
+        "Hair loss",
+        "Hair shedding",
+        "Hair thinning",
+        "Hard mass",
+        "Hard nodule",
+        "Headache",
+        "Headaches",
+        "Heaviness feeling",
+        "Heavy bleeding",
+        "Heavy periods",
+        "Hematuria",
+        "High blood pressure",
+        "Hip pain",
+        "Inconsistent erections",
+        "Increased thirst",
+        "Irregular bleeding",
+        "Irregular cycles",
+        "Irregular periods",
+        "Itchy eyes",
+        "Leg pain",
+        "Long cycles",
+        "Loss of balance",
+        "Loss of interest",
+        "Low libido",
+        "Lower abdominal pain",
+        "Lower back pain",
+        "Mild headache",
+        "Missed periods",
+        "Mood swings",
+        "Muscle aches",
+        "Muscle pain",
+        "Nausea",
+        "Night sweats",
+        "Nipple discharge",
+        "Nipple inversion",
+        "Numbness",
+        "Oily skin",
+        "Orange peel skin",
+        "Pain",
+        "Pain during bowel movements",
+        "Pain during intercourse",
+        "Painful periods",
+        "Painful urination",
+        "Palpable mass",
+        "Panic attacks",
+        "Pelvic pain",
+        "Persistent cough",
+        "Persistent sadness",
+        "Persistent vomiting",
+        "Poor sexual appetite",
+        "Post-coital bleeding",
+        "Pressure sensation",
+        "Rapid heartbeat",
+        "Receding hairline",
+        "Redness",
+        "Reduced sexual desire",
+        "Restlessness",
+        "Runny nose",
+        "Scalp dryness",
+        "Scalp sensitivity",
+        "Scrotal mass",
+        "Severe headache",
+        "Severe headaches",
+        "Severe nausea",
+        "Severe pelvic pain",
+        "Sharp abdominal pain",
+        "Sharp pelvic pain",
+        "Shortness of breath",
+        "Size changes",
+        "Skin changes",
+        "Skin darkening",
+        "Sleep problems",
+        "Slow healing",
+        "Sneezing",
+        "Soft erections",
+        "Sore throat",
+        "Speech difficulty",
+        "Stabbing pain",
+        "Stuffy nose",
+        "Sudden numbness",
+        "Sudden pain",
+        "Swelling",
+        "Swollen legs",
+        "Swollen lymph nodes",
+        "Temporal recession",
+        "Testicular enlargement",
+        "Testicular lump",
+        "Testicular pain",
+        "Thickening",
+        "Trouble getting erection",
+        "Upper abdominal pain",
+        "Urinary retention",
+        "Vaginal discharge",
+        "Vertex baldness",
+        "Vision problems",
+        "Watery eyes",
+        "Weak urine stream",
+        "Weakness",
+        "Weight gain",
+        "Weight loss",
+        "Wheezing",
+      ];
+
+      const token = getToken();
+
+      // Load user information
+      async function loadUser() {
+        try {
+          const res = await fetch("http://localhost:5000/student/user", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (res.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (res.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const user = await res.json();
+          if (!res.ok) throw new Error(user.message);
+
+          currentUser = user;
+          document.getElementById("userName").textContent =
+            user.name || "Student";
+        } catch (error) {
+          console.error("Error loading user from backend:", error);
+          showError(
+            "Failed to load user information. Please refresh the page."
+          );
+          // Redirect to login if authentication fails
+          setTimeout(() => {
+            window.location.href = "login.html";
+          }, 2000);
+        }
+      }
+
+      // Initialize symptom dropdown
+      function initializeSymptomDropdown() {
+        const dropdownBtn = document.getElementById("symptomDropdownBtn");
+        const dropdown = document.getElementById("symptomDropdown");
+        const optionsContainer = document.getElementById("symptomOptions");
+        const searchInput = document.getElementById("symptomSearch");
+        const dropdownArrow = document.getElementById("dropdownArrow");
+
+        // Populate dropdown with symptoms
+        renderSymptomOptions();
+
+        // Toggle dropdown
+        dropdownBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          const isHidden = dropdown.classList.contains("hidden");
+          dropdown.classList.toggle("hidden");
+          dropdownArrow.style.transform = isHidden
+            ? "rotate(180deg)"
+            : "rotate(0deg)";
+
+          if (isHidden) {
+            searchInput.focus();
+          }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+          if (!dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add("hidden");
+            dropdownArrow.style.transform = "rotate(0deg)";
+          }
+        });
+
+        // Search functionality
+        searchInput.addEventListener("input", function () {
+          const query = this.value.toLowerCase();
+          renderSymptomOptions(query);
+        });
+      }
+
+      function renderSymptomOptions(searchQuery = "") {
+        const optionsContainer = document.getElementById("symptomOptions");
+        const filteredSymptoms = commonSymptoms.filter((symptom) =>
+          symptom.toLowerCase().includes(searchQuery)
+        );
+
+        optionsContainer.innerHTML = "";
+
+        if (filteredSymptoms.length === 0) {
+          optionsContainer.innerHTML =
+            '<div class="px-4 py-3 text-gray-500 text-center">No symptoms found</div>';
+          return;
+        }
+
+        filteredSymptoms.forEach((symptom) => {
+          const option = document.createElement("div");
+          option.className = `symptom-option px-4 py-2 hover:bg-blue-100 cursor-pointer flex items-center justify-between transition-all ${
+            selectedSymptoms.has(symptom)
+              ? "bg-blue-50 text-blue-700 border-l-2 border-blue-400"
+              : ""
+          }`;
+
+          option.innerHTML = `
+      <span>${symptom}</span>
+      ${
+        selectedSymptoms.has(symptom)
+          ? '<span class="text-blue-500 font-bold">✓</span>'
+          : ""
+      }
+    `;
+
+          option.addEventListener("click", function () {
+            toggleSymptom(symptom);
+            renderSymptomOptions(searchQuery);
+            updateSelectedSymptomsDisplay();
+          });
+
+          optionsContainer.appendChild(option);
+        });
+      }
+
+      function toggleSymptom(symptom) {
+        if (selectedSymptoms.has(symptom)) {
+          selectedSymptoms.delete(symptom);
+        } else {
+          selectedSymptoms.add(symptom);
+        }
+      }
+
+      function updateSelectedSymptomsDisplay() {
+        const container = document.getElementById("selectedSymptomsContainer");
+        const display = document.getElementById("selectedSymptoms");
+        const placeholder = document.getElementById("dropdownPlaceholder");
+
+        if (selectedSymptoms.size === 0) {
+          container.classList.add("hidden");
+          placeholder.textContent = "Choose symptoms from the list...";
+          placeholder.className = "text-gray-500";
+        } else {
+          container.classList.remove("hidden");
+          placeholder.textContent = `${selectedSymptoms.size} symptom${
+            selectedSymptoms.size > 1 ? "s" : ""
+          } selected`;
+          placeholder.className = "text-blue-700 font-medium";
+
+          display.innerHTML = "";
+          Array.from(selectedSymptoms).forEach((symptom) => {
+            const tag = document.createElement("span");
+            tag.className =
+              "symptom-tag-appear inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-500 text-white shadow-sm hover:bg-blue-600 transition-all";
+            tag.innerHTML = `
+        <span>${symptom}</span>
+        <button type="button" class="ml-2 text-blue-200 hover:text-white focus:outline-none" onclick="removeSymptom('${symptom}')">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
+            display.appendChild(tag);
+          });
+        }
+      }
+
+      // Global function to remove symptoms
+      window.removeSymptom = function (symptom) {
+        selectedSymptoms.delete(symptom);
+        updateSelectedSymptomsDisplay();
+        renderSymptomOptions();
+      };
+
+      // Save diagnostics to database
+      async function saveDiagnostics({
+        symptoms,
+        severity,
+        age,
+        gender,
+        diagnosis,
+      }) {
+        try {
+          // Convert diagnosis object to string for storage
+          const diagnosisString =
+            typeof diagnosis === "object"
+              ? JSON.stringify(diagnosis)
+              : (diagnosis || "").toString();
+
+          const payload = {
+            user_id: currentUser?.id,
+            symptoms: Array.isArray(symptoms)
+              ? symptoms.join(", ")
+              : (symptoms || "").toString().trim(),
+            severity: severity,
+            age: age ? parseInt(age) : null,
+            gender: (gender || "").toString().trim(),
+            diagnosis: diagnosisString,
+          };
+
+          console.log(" Sending diagnostics:", payload);
+
+          const response = await fetch(
+            "http://localhost:5000/diagnostics/store",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+
+          // Handle common HTTP errors
+          if (response.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (response.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (response.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            console.error("Server response error:", result);
+            throw new Error(result.message || "Unknown server error");
+          }
+
+          // If we reach here, it was successful
+          showSuccess("Diagnostics Saved Successfully");
+          console.log(" Saved diagnostics:", result);
+        } catch (error) {
+          console.error(" Error saving diagnostics:", error.message);
+          showError("Failed to save diagnosis: " + error.message);
+          throw error;
+        }
+      }
+
+      // Handle form submission
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        // Validate selected symptoms
+        if (selectedSymptoms.size === 0) {
+          showError("Please select at least one symptom.");
+          return;
+        }
+
+        // Collect form data
+        const symptoms = Array.from(selectedSymptoms).join(", ");
+        const age = document.getElementById("age").value;
+        const gender = document.getElementById("gender").value;
+
+        // Validate required fields
+        if (!age || !gender) {
+          showError("Please fill in all required fields.");
+          return;
+        }
+
+        // Validate age range
+        const ageNum = parseInt(age);
+        if (ageNum < 17 || ageNum > 65) {
+          showError(
+            "Age must be between 17 and 65 for campus health services."
+          );
+          return;
+        }
+
+        // Show loading states
+        const progressOverlay = document.getElementById("progressOverlay");
+        const resultsSection = document.getElementById("resultsSection");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const diagnosisResults = document.getElementById("diagnosisResults");
+        const diagnoseBtn = document.getElementById("diagnoseBtn");
+        const newAnalysisBtn = document.getElementById("newAnalysisBtn");
+
+        // Show loading overlay
+        progressOverlay.classList.remove("hidden");
+        resultsSection.classList.remove("hidden");
+        loadingSpinner.classList.remove("hidden");
+        diagnosisResults.classList.add("hidden");
+        newAnalysisBtn.classList.add("hidden");
+
+        // Disable submit button
+        diagnoseBtn.disabled = true;
+        diagnoseBtn.innerHTML = `
+    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white inline-block mr-2"></div>
+    Analyzing...
+  `;
+
+        try {
+          const token = getToken();
+
+          // Try to call the AI diagnosis API
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          const cleanAiUrl = "http://localhost:5002";
+
+          const response = await fetch(`${cleanAiUrl}/ai/diagnose`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              age: parseInt(age),
+              gender: gender,
+              symptoms: symptoms,
+              severity: "medium",
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          let diagnosisData;
+          if (!response.ok) {
+            throw new Error(`Server error (${response.status})`);
+          }
+
+          diagnosisData = await response.json();
+          const diagnosis = diagnosisData.diagnosis;
+
+          if (!diagnosisData.success || !diagnosis) {
+            throw new Error("Invalid response from AI service");
+          }
+
+          // Display successful diagnosis
+          displayDiagnosis(diagnosisData.diagnosis);
+          showSuccess("AI diagnosis completed successfully!");
+
+          // Save to database - pass the full diagnosis object
+          await saveDiagnostics({
+            symptoms,
+            severity: "medium",
+            age,
+            gender,
+            diagnosis: diagnosisData.diagnosis,
+          });
+        } catch (error) {
+          console.error("AI diagnosis failed:", error);
+          showError(
+            "AI diagnosis service is currently unavailable. Please try again later or contact support."
+          );
+        } finally {
+          // Hide loading and restore UI
+          progressOverlay.classList.add("hidden");
+          loadingSpinner.classList.add("hidden");
+          diagnosisResults.classList.remove("hidden");
+          newAnalysisBtn.classList.remove("hidden");
+
+          // Re-enable submit button
+          diagnoseBtn.disabled = false;
+          diagnoseBtn.innerHTML = `
+      <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+      </svg>
+      Get AI Diagnosis
+    `;
+
+          // Scroll to results
+          resultsSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+
+      // Display diagnosis results
+      function displayDiagnosis(diagnosis) {
+        const diagnosisResults = document.getElementById("diagnosisResults");
+
+        let resultsHTML = `
+    <div class="space-y-6">
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+        <div class="flex items-start">
+          <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="text-sm text-yellow-800">
+            <strong>Important:</strong> ${
+              diagnosis.disclaimer ||
+              "This is an AI-generated analysis. Please consult a healthcare professional for proper medical evaluation."
+            }
+          </p>
+        </div>
+      </div>
+  `;
+
+        // Primary diagnosis
+        if (diagnosis.primary_diagnosis) {
+          resultsHTML += `
+      <div class="result-card border border-blue-200 rounded-xl p-6 bg-gradient-to-r from-blue-50 to-blue-100 transition-all">
+        <h3 class="text-xl font-bold text-blue-800 mb-3 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          Primary AI Analysis
+        </h3>
+        <p class="text-blue-700 mb-3 text-lg leading-relaxed">${
+          diagnosis.primary_diagnosis
+        }</p>
+        <div class="grid grid-cols-2 gap-4 text-sm text-blue-600">
+          <div class="bg-white bg-opacity-50 rounded-lg p-3">
+            <p class="font-semibold">Overall Confidence</p>
+            <p class="text-lg font-bold">${diagnosis.confidence}</p>
+          </div>
+          ${
+            diagnosis.top_disease
+              ? `
+            <div class="bg-white bg-opacity-50 rounded-lg p-3">
+              <p class="font-semibold">Top Prediction</p>
+              <p class="text-lg font-bold">${diagnosis.top_disease}</p>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+        }
+
+        // Possible conditions
+        if (
+          diagnosis.possible_conditions &&
+          diagnosis.possible_conditions.length > 0
+        ) {
+          resultsHTML += `
+      <div class="result-card border border-gray-200 rounded-xl p-6 bg-white transition-all">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          Possible Conditions (Ranked by Confidence)
+        </h3>
+        <div class="space-y-4">
+    `;
+
+          diagnosis.possible_conditions.forEach((condition, index) => {
+            const confidence = parseFloat(
+              condition.confidence.replace("%", "")
+            );
+            let confidenceClass = "confidence-low";
+
+            if (confidence >= 70) {
+              confidenceClass = "confidence-high";
+            } else if (confidence >= 50) {
+              confidenceClass = "confidence-medium";
+            }
+
+            resultsHTML += `
+        <div class="border-l-4 ${confidenceClass} pl-4 py-3 rounded-r-lg transition-all hover:shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-gray-800">${
+              condition.rank ? `#${condition.rank}` : `#${index + 1}`
+            } ${condition.condition}</h4>
+            <span class="text-sm font-bold px-3 py-1 rounded-full ${
+              confidence >= 70
+                ? "bg-green-100 text-green-800"
+                : confidence >= 50
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-red-100 text-red-800"
+            }">${condition.confidence}</span>
+          </div>
+          <div class="text-sm text-gray-600 space-y-1">
+            ${
+              condition.category
+                ? `<p><span class="font-semibold">Category:</span> ${condition.category}</p>`
+                : ""
+            }
+            ${
+              condition.severity
+                ? `
+              <p><span class="font-semibold">Severity:</span>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                  condition.severity === "High"
+                    ? "bg-red-100 text-red-800"
+                    : condition.severity === "Medium"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-green-100 text-green-800"
+                }">${condition.severity}</span>
+              </p>
+            `
+                : ""
+            }
+            ${
+              condition.description
+                ? `<p class="mt-2 text-gray-700 italic">${condition.description}</p>`
+                : ""
+            }
+          </div>
+        </div>
+      `;
+          });
+
+          resultsHTML += `
+        </div>
+      </div>
+    `;
+        }
+
+        // Recommendations
+        if (diagnosis.recommendations && diagnosis.recommendations.length > 0) {
+          resultsHTML += `
+      <div class="result-card border border-green-200 rounded-xl p-6 bg-gradient-to-r from-green-50 to-green-100 transition-all">
+        <h3 class="text-xl font-bold text-green-800 mb-4 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Medical Recommendations
+        </h3>
+        <ul class="text-green-700 space-y-2">
+          ${diagnosis.recommendations
+            .map(
+              (rec) => `
+            <li class="flex items-start">
+              <span class="text-green-500 mr-2 font-bold">•</span>
+              <span>${rec}</span>
+            </li>
+          `
+            )
+            .join("")}
+        </ul>
+      </div>
+    `;
+        }
+
+        // Urgency warning
+        if (diagnosis.urgency === "High" || diagnosis.urgency === "Emergency") {
+          resultsHTML += `
+      <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div>
+            <h4 class="font-bold text-red-800 mb-2">⚠️ Urgent Medical Attention Required</h4>
+            <p class="text-red-700">Based on the AI analysis, this condition may require immediate medical attention. Please consult a healthcare professional as soon as possible.</p>
+          </div>
+        </div>
+      </div>
+    `;
+        }
+
+        resultsHTML += `</div>`;
+        diagnosisResults.innerHTML = resultsHTML;
+      }
+
+      // Initialize application
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("Initializing AI diagnosis page...");
+
+        // Load user information
+        await loadUser();
+
+        // Initialize symptom dropdown
+        initializeSymptomDropdown();
+
+        // Event listeners
+        const symptomForm = document.getElementById("symptomForm");
+        if (symptomForm) {
+          symptomForm.addEventListener("submit", handleFormSubmit);
+        }
+
+        const newAnalysisBtn = document.getElementById("newAnalysisBtn");
+        if (newAnalysisBtn) {
+          newAnalysisBtn.addEventListener("click", () => {
+            // Reset form
+            document.getElementById("symptomForm").reset();
+            selectedSymptoms.clear();
+            updateSelectedSymptomsDisplay();
+
+            // Hide results
+            document.getElementById("resultsSection").classList.add("hidden");
+            document.getElementById("newAnalysisBtn").classList.add("hidden");
+
+            // Scroll back to form
+            document
+              .getElementById("symptomForm")
+              .scrollIntoView({ behavior: "smooth" });
+
+            showSuccess("Form reset for new analysis");
+          });
+        }
+
+        // Profile dropdown functionality
+        const profileBtn = document.getElementById("profileBtn");
+        const profileDropdown = document.getElementById("profileDropdown");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (profileBtn && profileDropdown) {
+          profileBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle("hidden");
+          });
+
+          document.addEventListener("click", (e) => {
+            if (
+              !profileDropdown.contains(e.target) &&
+              !profileBtn.contains(e.target)
+            ) {
+              profileDropdown.classList.add("hidden");
+            }
+          });
+        }
+
+        // Logout functionality
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            try {
+              sessionStorage.clear();
+            } catch (error) {
+              console.warn("Storage clearing failed:", error);
+            }
+            window.location.replace("landing.html");
+          });
+        }
+
+        // Form validation
+        const ageInput = document.getElementById("age");
+        const genderSelect = document.getElementById("gender");
+
+        function validateForm() {
+          const hasSymptoms = selectedSymptoms.size > 0;
+          const hasAge =
+            ageInput.value && ageInput.value >= 17 && ageInput.value <= 65;
+          const hasGender = genderSelect.value !== "";
+
+          const diagnoseBtn = document.getElementById("diagnoseBtn");
+          if (diagnoseBtn) {
+            diagnoseBtn.disabled = !(hasSymptoms && hasAge && hasGender);
+          }
+        }
+
+        // Add validation listeners
+        if (ageInput) {
+          ageInput.addEventListener("input", validateForm);
+        }
+        if (genderSelect) {
+          genderSelect.addEventListener("change", validateForm);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener("keydown", function (e) {
+          // Escape to close dropdown
+          if (e.key === "Escape") {
+            const dropdown = document.getElementById("symptomDropdown");
+            const dropdownArrow = document.getElementById("dropdownArrow");
+            if (dropdown && !dropdown.classList.contains("hidden")) {
+              dropdown.classList.add("hidden");
+              if (dropdownArrow) {
+                dropdownArrow.style.transform = "rotate(0deg)";
+              }
+            }
+          }
+
+          // Ctrl/Cmd + Enter to submit form (if valid)
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            const diagnoseBtn = document.getElementById("diagnoseBtn");
+            if (diagnoseBtn && !diagnoseBtn.disabled) {
+              e.preventDefault();
+              symptomForm.dispatchEvent(new Event("submit"));
+            }
+          }
+        });
+
+        // Initial form validation
+        validateForm();
+
+        // Add smooth scroll behavior for better UX
+        document.documentElement.style.scrollBehavior = "smooth";
+
+        console.log("AI diagnosis page initialized");
+      });
+
+      // Make functions globally available for debugging
+      window.loadUser = loadUser;
+      window.handleFormSubmit = handleFormSubmit;
+      window.displayDiagnosis = displayDiagnosis;
+      window.toggleSymptom = toggleSymptom;
+    </script>
+
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

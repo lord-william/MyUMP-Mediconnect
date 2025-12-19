@@ -1,0 +1,294 @@
+WARNING: XGBoost not available. Install with: pip install xgboost
+Using BalancedRandomForestClassifier for class imbalance handling
+======================================================================
+CREATING GENDER-SPECIFIC AI MODELS FOR MEDICONNECT
+======================================================================
+Loading AUGMENTED gender-specific medical datasets...
+Male dataset shape: (12593, 10)
+Male rows: 12593
+Male diseases: 54
+Female dataset shape: (13193, 10)
+Female rows: 13193
+Female diseases: 57
+
+Male dataset missing values:
+age                    0
+symptom1               0
+symptom2               0
+symptom3             262
+symptom4            7314
+symptom5           12048
+symptom6           12593
+disease                0
+severity               0
+gender_specific        0
+dtype: int64
+
+Female dataset missing values:
+age                    0
+symptom1               0
+symptom2               0
+symptom3             266
+symptom4            7544
+symptom5           12475
+symptom6           13193
+disease                0
+severity               0
+gender_specific        0
+dtype: int64
+
+==================================================
+TRAINING MALE MODEL
+==================================================
+
+Preparing features for Male model...
+Male features: ['age', 'symptom1', 'symptom2', 'symptom3', 'symptom4', 'symptom5', 'symptom6', 'severity', 'gender_specific']
+Male target classes: 54
+Male total unique symptoms: 97
+Male sample symptoms: ['abdominal pain', 'anxiety', 'arm weakness', 'back pain', 'bald spot', 'blood in urine', 'blurred vision', 'body aches', 'bone pain', 'chest pain']
+
+Encoding features for Male...
+Male encoded symptom1: 98 categories
+Male encoded symptom2: 98 categories
+Male encoded symptom3: 98 categories
+Male encoded symptom4: 98 categories
+Male encoded symptom5: 98 categories
+Male encoded symptom6: 98 categories
+Male severity categories: ['high' 'low' 'medium']
+Male gender categories: ['male']
+Male disease classes: 54
+Male sample diseases: ['Acid Reflux (GERD)' 'Acute Rheumatic Fever' 'Allergies' 'Anthrax'
+ 'Anxiety Disorder' 'Arbovirus' 'Asthma' 'Bartonellosis' 'Botulism'
+ 'Brucellosis']
+
+Training Male model with class imbalance handling...
+Male class distribution:
+  Class 0: 154 samples
+  Class 1: 157 samples
+  Class 2: 500 samples
+  Class 3: 155 samples
+  Class 4: 500 samples
+  Class 5: 155 samples
+  Class 6: 500 samples
+  Class 7: 158 samples
+  Class 8: 159 samples
+  Class 9: 156 samples
+  Class 10: 150 samples
+  Class 11: 143 samples
+  Class 12: 159 samples
+  Class 13: 500 samples
+  Class 14: 166 samples
+  Class 15: 154 samples
+  Class 16: 159 samples
+  Class 17: 500 samples
+  Class 18: 500 samples
+  Class 19: 164 samples
+  Class 20: 163 samples
+  Class 21: 168 samples
+  Class 22: 500 samples
+  Class 23: 158 samples
+  Class 24: 156 samples
+  Class 25: 157 samples
+  Class 26: 158 samples
+  Class 27: 151 samples
+  Class 28: 158 samples
+  Class 29: 145 samples
+  Class 30: 500 samples
+  Class 31: 500 samples
+  Class 32: 154 samples
+  Class 33: 145 samples
+  Class 34: 152 samples
+  Class 35: 158 samples
+  Class 36: 160 samples
+  Class 37: 500 samples
+  Class 38: 159 samples
+  Class 39: 152 samples
+  Class 40: 500 samples
+  Class 41: 156 samples
+  Class 42: 154 samples
+  Class 43: 160 samples
+  Class 44: 153 samples
+  Class 45: 159 samples
+  Class 46: 147 samples
+  Class 47: 155 samples
+  Class 48: 200 samples
+  Class 49: 159 samples
+  Class 50: 161 samples
+  Class 51: 500 samples
+  Class 52: 152 samples
+  Class 53: 154 samples
+Male training set: 10074 samples
+Male test set: 2519 samples
+WARNING: Falling back to RandomForest for Male
+Training Male RandomForest model...
+
+Male RandomForest Performance:
+Training accuracy: 0.9892
+Test accuracy: 0.5451
+Training F1-score: 0.9892
+Test F1-score: 0.5472
+
+Male Top Feature Importances:
+  age: 0.2199
+  symptom1: 0.2125
+  symptom2: 0.2048
+  symptom3: 0.1945
+  symptom4: 0.1039
+
+Saving Male model components...
+SUCCESS: Saved male_medical_model.pkl
+SUCCESS: Saved male_medical_encoders.pkl
+SUCCESS: Saved male_disease_classes.pkl
+SUCCESS: Saved male_model_info.json
+
+Male Model Summary:
+Total diseases: 54
+Total symptoms: 97
+Model files: male_medical_model.pkl, male_medical_encoders.pkl, male_disease_classes.pkl
+
+==================================================
+TRAINING FEMALE MODEL
+==================================================
+
+Preparing features for Female model...
+Female features: ['age', 'symptom1', 'symptom2', 'symptom3', 'symptom4', 'symptom5', 'symptom6', 'severity', 'gender_specific']
+Female target classes: 57
+Female total unique symptoms: 125
+Female sample symptoms: ['abdominal cramps', 'abdominal pain', 'abdominal swelling', 'abnormal bleeding', 'acne', 'ankle swelling', 'anxiety', 'arm weakness', 'back pain', 'back spasms']
+
+Encoding features for Female...
+Female encoded symptom1: 126 categories
+Female encoded symptom2: 126 categories
+Female encoded symptom3: 126 categories
+Female encoded symptom4: 126 categories
+Female encoded symptom5: 126 categories
+Female encoded symptom6: 126 categories
+Female severity categories: ['high' 'low' 'medium']
+Female gender categories: ['female']
+Female disease classes: 57
+Female sample diseases: ['Acid Reflux (GERD)' 'Acute Rheumatic Fever' 'Allergies' 'Anthrax'
+ 'Anxiety Disorder' 'Arbovirus' 'Asthma' 'Bartonellosis' 'Botulism'
+ 'Breast Cancer']
+
+Training Female model with class imbalance handling...
+Female class distribution:
+  Class 0: 154 samples
+  Class 1: 157 samples
+  Class 2: 500 samples
+  Class 3: 155 samples
+  Class 4: 500 samples
+  Class 5: 155 samples
+  Class 6: 500 samples
+  Class 7: 158 samples
+  Class 8: 159 samples
+  Class 9: 200 samples
+  Class 10: 156 samples
+  Class 11: 150 samples
+  Class 12: 143 samples
+  Class 13: 200 samples
+  Class 14: 159 samples
+  Class 15: 500 samples
+  Class 16: 166 samples
+  Class 17: 154 samples
+  Class 18: 159 samples
+  Class 19: 500 samples
+  Class 20: 500 samples
+  Class 21: 164 samples
+  Class 22: 500 samples
+  Class 23: 163 samples
+  Class 24: 168 samples
+  Class 25: 158 samples
+  Class 26: 156 samples
+  Class 27: 157 samples
+  Class 28: 158 samples
+  Class 29: 151 samples
+  Class 30: 158 samples
+  Class 31: 145 samples
+  Class 32: 500 samples
+  Class 33: 500 samples
+  Class 34: 154 samples
+  Class 35: 145 samples
+  Class 36: 152 samples
+  Class 37: 158 samples
+  Class 38: 160 samples
+  Class 39: 500 samples
+  Class 40: 159 samples
+  Class 41: 152 samples
+  Class 42: 200 samples
+  Class 43: 500 samples
+  Class 44: 200 samples
+  Class 45: 156 samples
+  Class 46: 154 samples
+  Class 47: 160 samples
+  Class 48: 153 samples
+  Class 49: 159 samples
+  Class 50: 147 samples
+  Class 51: 155 samples
+  Class 52: 159 samples
+  Class 53: 161 samples
+  Class 54: 500 samples
+  Class 55: 152 samples
+  Class 56: 154 samples
+Female training set: 10554 samples
+Female test set: 2639 samples
+WARNING: Falling back to RandomForest for Female
+Training Female RandomForest model...
+
+Female RandomForest Performance:
+Training accuracy: 0.9909
+Test accuracy: 0.5479
+Training F1-score: 0.9909
+Test F1-score: 0.5488
+
+Female Top Feature Importances:
+  symptom1: 0.2136
+  age: 0.2135
+  symptom2: 0.2068
+  symptom3: 0.1973
+  symptom4: 0.1045
+
+Saving Female model components...
+SUCCESS: Saved female_medical_model.pkl
+SUCCESS: Saved female_medical_encoders.pkl
+SUCCESS: Saved female_disease_classes.pkl
+SUCCESS: Saved female_model_info.json
+
+Female Model Summary:
+Total diseases: 57
+Total symptoms: 125
+Model files: female_medical_model.pkl, female_medical_encoders.pkl, female_disease_classes.pkl
+
+======================================================================
+TESTING GENDER-SPECIFIC MODELS
+======================================================================
+
+1. Testing MALE model with depression symptoms:
+Male prediction: Depression
+Male confidence: 0.789 (78.9%)
+Male top 5 predictions:
+  1. Depression: 0.789 (78.9%)
+  2. Erectile Dysfunction: 0.026 (2.6%)
+  3. Sexually Transmitted Infections: 0.020 (2.0%)
+  4. Dengue Fever: 0.017 (1.7%)
+  5. Bartonellosis: 0.016 (1.6%)
+
+2. Testing FEMALE model with period symptoms:
+Female prediction: Menstrual Cramps (Dysmenorrhea)
+Female confidence: 0.656 (65.6%)
+Female top 5 predictions:
+  1. Menstrual Cramps (Dysmenorrhea): 0.656 (65.6%)
+  2. Pregnancy Complications: 0.138 (13.8%)
+  3. Endometriosis: 0.100 (10.0%)
+  4. Anxiety Disorder: 0.045 (4.5%)
+  5. Ovarian Cysts: 0.026 (2.6%)
+
+======================================================================
+SUCCESS: GENDER-SPECIFIC MODEL TRAINING COMPLETED SUCCESSFULLY!
+======================================================================
+Male model: 54 diseases, 97 symptoms
+Female model: 57 diseases, 125 symptoms
+
+Next steps:
+1. Update the AI service to use gender-specific models
+2. Test with the web interface
+3. Verify gender bias elimination

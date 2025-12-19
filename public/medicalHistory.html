@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medical History - MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      /* Custom animations */
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .history-card {
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .content-fade {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      /* Loading animation */
+      .loading-shimmer {
+        background: linear-gradient(
+          90deg,
+          #f3f4f6 25%,
+          #e5e7eb 50%,
+          #f3f4f6 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Card hover effects */
+      .history-card:hover {
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-indigo-100 text-[#001F3F] font-sans flex flex-col min-h-screen"
+  >
+    <!-- Navigation -->
+    <nav class="bg-white text-black shadow-lg p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a
+          href="studentDashboard.html"
+          class="hover:scale-105 transition-transform"
+        >
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+
+        <div class="hidden md:flex space-x-6">
+          <a href="studentDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="medicalHistory.html"
+            class="hover:text-blue-600 transition font-semibold border-b-2 border-blue-500"
+            >History</a
+          >
+          <a href="contactSupport.html" class="hover:text-blue-600 transition"
+            >Support</a
+          >
+          <a href="healthTips.html" class="hover:text-blue-600 transition"
+            >Health Tips</a
+          >
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="relative text-sm">
+            <span id="userName" class="mr-2 font-medium">Student</span>
+            <button
+              id="profileBtn"
+              class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition-all hover:scale-105"
+            >
+              MC
+            </button>
+            <div
+              class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded-lg shadow-xl border hidden"
+              id="profileDropdown"
+            >
+              <a
+                href="settings.html"
+                class="block px-4 py-2 hover:bg-blue-50 rounded-t-lg transition"
+                >Profile Settings</a
+              >
+              <a
+                href="#"
+                id="logoutBtn"
+                class="block px-4 py-2 text-red-600 hover:bg-red-50 rounded-b-lg transition"
+                >Logout</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-grow">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Page Header -->
+        <div class="text-center mb-10">
+          <h1 class="text-4xl font-bold text-[#001F3F] mb-2">
+            Your Medical History
+          </h1>
+          <p class="text-gray-600">
+            Complete record of your past appointments, diagnoses, and treatments
+          </p>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-white rounded-xl shadow-md p-6 border border-blue-200">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Visits</p>
+                <p class="text-lg font-semibold text-gray-900" id="totalVisits">
+                  -
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 border border-green-200"
+          >
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Last Visit</p>
+                <p class="text-lg font-semibold text-gray-900" id="lastVisit">
+                  -
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 border border-purple-200"
+          >
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Health Score</p>
+                <p class="text-lg font-semibold text-gray-900">Excellent</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medical History Section -->
+        <div class="bg-white border border-blue-200 rounded-2xl shadow-xl p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-8 h-8 mr-3 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                ></path>
+              </svg>
+              Your Health Records
+            </h2>
+            <button
+              id="refreshBtn"
+              class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all font-medium hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <svg
+                class="w-4 h-4 inline-block mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                ></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Filter and Search -->
+          <div class="mb-6 flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <label
+                for="searchInput"
+                class="block text-sm font-semibold mb-2 text-gray-700"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+                Search Records
+              </label>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search by symptoms, diagnosis, or date..."
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </div>
+            <div>
+              <label
+                for="sortSelect"
+                class="block text-sm font-semibold mb-2 text-gray-700"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  ></path>
+                </svg>
+                Sort By
+              </label>
+              <select
+                id="sortSelect"
+                class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="date_desc">Newest First</option>
+                <option value="date_asc">Oldest First</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Medical Records Container -->
+          <div
+            class="space-y-6 custom-scrollbar max-h-96 overflow-y-auto"
+            id="medicalHistoryContainer"
+          >
+            <!-- Loading state -->
+            <div class="loading-shimmer h-20 rounded-lg"></div>
+            <div class="loading-shimmer h-20 rounded-lg"></div>
+            <div class="loading-shimmer h-20 rounded-lg"></div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="hidden text-center py-12">
+            <svg
+              class="w-24 h-24 mx-auto text-gray-300 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1"
+                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              ></path>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-500 mb-2">
+              No Medical Records Found
+            </h3>
+            <p class="text-gray-400 mb-6">
+              You haven't had any appointments yet or no records match your
+              search.
+            </p>
+            <a
+              href="book_Appointment.html"
+              class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all font-medium hover:shadow-lg transform hover:-translate-y-0.5 inline-block"
+            >
+              Book Your First Appointment
+            </a>
+          </div>
+        </div>
+
+        <!-- Health Tips Section -->
+        <div
+          class="mt-8 bg-white border border-green-200 rounded-xl shadow-md p-6"
+        >
+          <h3 class="text-xl font-bold text-[#001F3F] mb-4 flex items-center">
+            <svg
+              class="w-6 h-6 mr-2 text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              ></path>
+            </svg>
+            Health Reminders
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700"
+          >
+            <div>
+              <h4 class="font-semibold mb-2">Regular Check-ups:</h4>
+              <ul class="space-y-1">
+                <li>• Annual physical examination</li>
+                <li>• Blood pressure monitoring</li>
+                <li>• Dental check-up every 6 months</li>
+                <li>• Eye examination annually</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Healthy Habits:</h4>
+              <ul class="space-y-1">
+                <li>• Stay hydrated (8 glasses daily)</li>
+                <li>• Regular exercise (30 min/day)</li>
+                <li>• Balanced nutrition</li>
+                <li>• Adequate sleep (7-9 hours)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white text-center py-6 text-sm mt-10">
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <script>
+      // Remove browser storage dependency and replace with in-memory storage
+      function getToken() {
+        try {
+          return (
+            sessionStorage.getItem("supabase_token") ||
+            "mock_token_for_development"
+          );
+        } catch (error) {
+          console.warn("SessionStorage not available, using mock token");
+          return "mock_token_for_development";
+        }
+      }
+
+      // Notification Functions
+      function showError(message, duration = 4000) {
+        const container = document.getElementById("errorContainer");
+        const msg = document.getElementById("errorMessage");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.error("Error:", message);
+        }
+      }
+
+      function showSuccess(message, duration = 4000) {
+        const container = document.getElementById("successContainer");
+        const msg = document.getElementById("successMessage");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.log("Success:", message);
+        }
+      }
+
+      // Application state
+      let currentUser = null;
+      let allAppointments = [];
+      let filteredAppointments = [];
+
+      // Format diagnosis for display - only show specific fields
+      function formatDiagnosis(diagnosis) {
+        if (!diagnosis) return "—";
+
+        // Only show these fields
+        const allowedFields = [
+          "confidence",
+          "disclaimer",
+          "primary_diagnosis",
+          "primary-diagnosis",
+          "primarydiagnosis",
+          "urgency",
+        ];
+
+        try {
+          const parsed =
+            typeof diagnosis === "string" ? JSON.parse(diagnosis) : diagnosis;
+
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map((d, i) => {
+                if (typeof d === "object") {
+                  const filteredEntries = Object.entries(d).filter(([key]) =>
+                    allowedFields.includes(
+                      key.toLowerCase().replace(/[_-]/g, "")
+                    )
+                  );
+
+                  if (filteredEntries.length === 0) return "";
+
+                  return `
+                <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                  <strong class="text-blue-700">Diagnosis ${i + 1}:</strong>
+                  <div class="mt-2 space-y-1">
+                    ${filteredEntries
+                      .map(
+                        ([key, value]) =>
+                          `<div><span class="font-medium text-gray-600">${key}:</span> ${value}</div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              `;
+                } else {
+                  return `<div class="mb-2">• ${d}</div>`;
+                }
+              })
+              .join("");
+          } else if (typeof parsed === "object") {
+            const filteredEntries = Object.entries(parsed).filter(([key]) =>
+              allowedFields.includes(key.toLowerCase().replace(/[_-]/g, ""))
+            );
+
+            if (filteredEntries.length === 0) return "—";
+
+            return `
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <div class="space-y-1">
+                ${filteredEntries
+                  .map(
+                    ([key, value]) =>
+                      `<div><span class="font-medium text-gray-600">${key}:</span> ${value}</div>`
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `;
+          }
+
+          return `<div>${parsed.toString()}</div>`;
+        } catch (e) {
+          return `<div>${diagnosis}</div>`;
+        }
+      }
+
+      // Load user information
+      async function loadUser() {
+        try {
+          const token = getToken();
+          const res = await fetch("http://localhost:5000/student/user", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (res.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (res.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const user = await res.json();
+          if (!res.ok) throw new Error(user.message);
+
+          currentUser = user;
+          document.getElementById("userName").textContent =
+            user.name || "Student";
+        } catch (error) {
+          console.error("Error loading user:", error);
+          showError("Failed to load user information");
+        }
+      }
+
+      // Load medical history
+      async function loadMedicalHistory() {
+        const container = document.getElementById("medicalHistoryContainer");
+        const emptyState = document.getElementById("emptyState");
+
+        try {
+          const token = getToken();
+          const res = await fetch(
+            "http://localhost:5000/history/appointments",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (res.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (res.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (res.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+
+          allAppointments = data.appointments || [];
+        } catch (error) {
+          console.error("Error loading medical history:", error);
+          showError("Failed to load medical history");
+          allAppointments = [];
+        }
+
+        // Update stats
+        updateStats();
+
+        // Filter and display appointments
+        filteredAppointments = [...allAppointments];
+        displayAppointments();
+      }
+
+      // Update statistics
+      function updateStats() {
+        const totalVisits = document.getElementById("totalVisits");
+        const lastVisit = document.getElementById("lastVisit");
+
+        if (totalVisits) {
+          totalVisits.textContent = allAppointments.length.toString();
+        }
+
+        if (lastVisit && allAppointments.length > 0) {
+          const latest = allAppointments.reduce((latest, appointment) => {
+            return new Date(appointment.date) > new Date(latest.date)
+              ? appointment
+              : latest;
+          });
+          lastVisit.textContent = latest.date;
+        } else if (lastVisit) {
+          lastVisit.textContent = "None";
+        }
+      }
+
+      // Display appointments
+      function displayAppointments() {
+        const container = document.getElementById("medicalHistoryContainer");
+        const emptyState = document.getElementById("emptyState");
+
+        container.innerHTML = "";
+
+        if (filteredAppointments.length === 0) {
+          container.classList.add("hidden");
+          emptyState.classList.remove("hidden");
+          return;
+        }
+
+        container.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+
+        filteredAppointments.forEach((record, index) => {
+          const card = document.createElement("div");
+          card.className =
+            "history-card bg-gradient-to-r from-white to-blue-50 border border-blue-200 rounded-xl shadow-md hover:shadow-lg p-6 transition-all duration-300";
+          card.style.animationDelay = `${index * 0.1}s`;
+
+          const symptoms = Array.isArray(record.symptoms)
+            ? record.symptoms.join(", ")
+            : record.symptoms || "—";
+
+          card.innerHTML = `
+          <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-[#001F3F]">Visit Date: ${
+                  record.date
+                }</h3>
+                <p class="text-blue-600 font-medium">${
+                  record.time || "Time not specified"
+                }</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Completed
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="font-semibold text-[#001F3F] mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Symptoms:
+              </h4>
+              <p class="text-gray-700 bg-orange-50 p-3 rounded-lg">${symptoms}</p>
+            </div>
+
+            <div>
+              <h4 class="font-semibold text-[#001F3F] mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Diagnosis & Treatment:
+              </h4>
+              <div class="text-gray-700">${formatDiagnosis(
+                record.diagnosis
+              )}</div>
+            </div>
+          </div>
+        `;
+
+          container.appendChild(card);
+        });
+      }
+
+      // Search and filter functionality
+      function setupSearchAndFilter() {
+        const searchInput = document.getElementById("searchInput");
+        const sortSelect = document.getElementById("sortSelect");
+
+        searchInput.addEventListener("input", (e) => {
+          const query = e.target.value.toLowerCase();
+
+          filteredAppointments = allAppointments.filter((appointment) => {
+            const searchText = `
+            ${appointment.date} 
+            ${appointment.symptoms} 
+            ${JSON.stringify(appointment.diagnosis)}
+          `.toLowerCase();
+
+            return searchText.includes(query);
+          });
+
+          applySorting();
+          displayAppointments();
+        });
+
+        sortSelect.addEventListener("change", (e) => {
+          applySorting();
+          displayAppointments();
+        });
+      }
+
+      // Apply sorting
+      function applySorting() {
+        const sortSelect = document.getElementById("sortSelect");
+        const sortValue = sortSelect.value;
+
+        filteredAppointments.sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+
+          if (sortValue === "date_desc") {
+            return dateB - dateA; // Newest first
+          } else {
+            return dateA - dateB; // Oldest first
+          }
+        });
+      }
+
+      // Refresh data
+      async function refreshData() {
+        const refreshBtn = document.getElementById("refreshBtn");
+        const originalText = refreshBtn.innerHTML;
+
+        refreshBtn.innerHTML = `
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+        Refreshing...
+      `;
+        refreshBtn.disabled = true;
+
+        try {
+          await loadMedicalHistory();
+          showSuccess("Medical history refreshed successfully");
+        } catch (error) {
+          showError("Failed to refresh medical history");
+        } finally {
+          setTimeout(() => {
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+          }, 1000);
+        }
+      }
+
+      // Initialize application
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("Initializing medical history page...");
+
+        // Load user information
+        await loadUser();
+
+        // Load medical history
+        await loadMedicalHistory();
+
+        // Setup search and filter
+        setupSearchAndFilter();
+
+        // Event listeners
+        const refreshBtn = document.getElementById("refreshBtn");
+        if (refreshBtn) {
+          refreshBtn.addEventListener("click", refreshData);
+        }
+
+        // Profile dropdown functionality
+        const profileBtn = document.getElementById("profileBtn");
+        const profileDropdown = document.getElementById("profileDropdown");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (profileBtn && profileDropdown) {
+          profileBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle("hidden");
+          });
+
+          document.addEventListener("click", (e) => {
+            if (
+              !profileDropdown.contains(e.target) &&
+              !profileBtn.contains(e.target)
+            ) {
+              profileDropdown.classList.add("hidden");
+            }
+          });
+        }
+
+        // Logout functionality
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            try {
+              sessionStorage.clear();
+            } catch (error) {
+              console.warn("Storage clearing failed:", error);
+            }
+            window.location.replace("landing.html");
+          });
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener("keydown", function (e) {
+          // Ctrl/Cmd + R to refresh
+          if ((e.ctrlKey || e.metaKey) && e.key === "r") {
+            e.preventDefault();
+            refreshData();
+          }
+
+          // Ctrl/Cmd + F to focus search
+          if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+            e.preventDefault();
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) {
+              searchInput.focus();
+            }
+          }
+        });
+
+        // Auto-refresh every 5 minutes
+        setInterval(async () => {
+          try {
+            await loadMedicalHistory();
+            console.log("Medical history auto-refreshed");
+          } catch (error) {
+            console.warn("Auto-refresh failed:", error);
+          }
+        }, 5 * 60 * 1000);
+
+        console.log("Medical history page initialized");
+      });
+
+      // Make functions globally available for debugging
+      window.loadMedicalHistory = loadMedicalHistory;
+      window.refreshData = refreshData;
+      window.formatDiagnosis = formatDiagnosis;
+    </script>
+
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

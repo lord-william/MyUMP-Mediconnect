@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Diagnosis Test - Embedding Model</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white py-4 shadow-md">
+    <div class="container mx-auto px-4">
+      <h1 class="text-2xl font-bold">🧠 AI Diagnosis Test (Embedding-Based Model)</h1>
+      <p class="text-sm text-blue-100">Testing all-MiniLM-L6-v2 + RandomForest</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8 max-w-4xl flex-grow">
+    <!-- Disclaimer -->
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6 rounded-r-lg">
+      <p class="text-sm text-yellow-800">
+        <strong>Test Environment:</strong> This page directly tests the embedding-based AI model without authentication.
+      </p>
+    </div>
+
+    <!-- AI Symptom Checker Form -->
+    <div class="bg-white border border-gray-200 rounded-lg shadow-md p-6 mb-8">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6">AI Symptom Checker</h2>
+
+      <form id="symptomForm" class="space-y-6">
+        <!-- Symptom Selector Dropdown -->
+        <div class="relative">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Select Your Symptoms *
+          </label>
+
+          <!-- Dropdown Button -->
+          <button type="button" id="symptomDropdownBtn"
+            class="w-full px-4 py-3 text-left border border-gray-300 rounded-lg shadow-sm bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 transition">
+            <span class="text-gray-500" id="dropdownPlaceholder">Choose symptoms from the list...</span>
+            <svg class="float-right mt-1 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="symptomDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-80 overflow-y-auto">
+            <div class="p-3 border-b border-gray-200">
+              <input type="text" id="symptomSearch" placeholder="Search symptoms..."
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div id="symptomOptions" class="py-2">
+              <!-- Symptoms will be populated by JavaScript -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Symptoms Display -->
+        <div id="selectedSymptomsContainer" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Selected Symptoms:</label>
+          <div id="selectedSymptoms" class="flex flex-wrap gap-2 p-3 border border-gray-200 rounded-lg bg-blue-50 min-h-12">
+            <!-- Selected symptoms will appear here -->
+          </div>
+        </div>
+
+        <!-- Hidden textarea to store symptoms -->
+        <input type="hidden" id="symptoms" name="symptoms" required>
+
+        <!-- Basic Info Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age *</label>
+            <input type="number" id="age" name="age" value="30" min="1" max="120" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+            <select id="gender" name="gender" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="severity" class="block text-sm font-medium text-gray-700 mb-2">Severity *</label>
+            <select id="severity" name="severity" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-center">
+          <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:scale-105">
+            Get AI Diagnosis
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="bg-white border border-gray-200 rounded-lg shadow-md p-6 hidden">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">AI Analysis Results</h2>
+
+      <!-- Loading Spinner -->
+      <div id="loadingSpinner" class="flex justify-center items-center py-8 hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span class="ml-3 text-gray-600">Analyzing symptoms...</span>
+      </div>
+
+      <!-- Results Content -->
+      <div id="diagnosisResults"></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-4 mt-auto">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm">AI Diagnosis Test Environment | Embedding-Based Model v2.0</p>
+    </div>
+  </footer>
+
+  <script>
+    // Symptom list (from your original diagnosis.js)
+    const commonSymptoms = [
+      "abdominal cramps", "abdominal pain", "acne", "anxiety", "back pain",
+      "bloating", "blood in urine", "blurred vision", "body aches", "breast tenderness",
+      "chest pain", "chills", "confusion", "congestion", "cough", "coughing",
+      "diarrhea", "difficulty breathing", "dizziness", "fatigue", "fever",
+      "headache", "heartburn", "insomnia", "joint pain", "loss of appetite",
+      "lower back pain", "muscle aches", "nausea", "night sweats", "runny nose",
+      "shortness of breath", "skin rash", "sore throat", "stomach pain", "sweating",
+      "swelling", "vomiting", "weakness", "weight loss", "wheezing"
+    ];
+
+    let selectedSymptoms = [];
+
+    // Populate symptom dropdown
+    function populateSymptoms() {
+      const symptomOptions = document.getElementById('symptomOptions');
+      symptomOptions.innerHTML = commonSymptoms.map(symptom => `
+        <label class="flex items-center px-4 py-2 hover:bg-blue-50 cursor-pointer">
+          <input type="checkbox" value="${symptom}" class="symptom-checkbox mr-2 rounded text-blue-600 focus:ring-blue-500">
+          <span class="text-sm text-gray-700 capitalize">${symptom}</span>
+        </label>
+      `).join('');
+
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.symptom-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedSymptoms);
+      });
+    }
+
+    // Update selected symptoms display
+    function updateSelectedSymptoms() {
+      const checkboxes = document.querySelectorAll('.symptom-checkbox:checked');
+      selectedSymptoms = Array.from(checkboxes).map(cb => cb.value);
+
+      const container = document.getElementById('selectedSymptomsContainer');
+      const display = document.getElementById('selectedSymptoms');
+      const hiddenInput = document.getElementById('symptoms');
+
+      if (selectedSymptoms.length > 0) {
+        container.classList.remove('hidden');
+        display.innerHTML = selectedSymptoms.map(symptom => `
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+            ${symptom}
+            <button type="button" class="ml-2 text-blue-600 hover:text-blue-800" onclick="removeSymptom('${symptom}')">×</button>
+          </span>
+        `).join('');
+
+        // Update hidden input with comma-separated symptoms
+        hiddenInput.value = selectedSymptoms.join(', ');
+        document.getElementById('dropdownPlaceholder').textContent = `${selectedSymptoms.length} symptoms selected`;
+      } else {
+        container.classList.add('hidden');
+        hiddenInput.value = '';
+        document.getElementById('dropdownPlaceholder').textContent = 'Choose symptoms from the list...';
+      }
+    }
+
+    // Remove symptom
+    function removeSymptom(symptom) {
+      const checkbox = document.querySelector(`.symptom-checkbox[value="${symptom}"]`);
+      if (checkbox) {
+        checkbox.checked = false;
+        updateSelectedSymptoms();
+      }
+    }
+    window.removeSymptom = removeSymptom; // Make it globally accessible
+
+    // Toggle dropdown
+    document.getElementById('symptomDropdownBtn').addEventListener('click', () => {
+      const dropdown = document.getElementById('symptomDropdown');
+      dropdown.classList.toggle('hidden');
+    });
+
+    // Search symptoms
+    document.getElementById('symptomSearch').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      document.querySelectorAll('#symptomOptions label').forEach(label => {
+        const symptomText = label.textContent.toLowerCase();
+        label.style.display = symptomText.includes(searchTerm) ? 'flex' : 'none';
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('symptomDropdown');
+      const btn = document.getElementById('symptomDropdownBtn');
+      if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // Initialize symptoms
+    populateSymptoms();
+
+    // Form submission handler
+    document.getElementById('symptomForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Get form values
+      const symptoms = document.getElementById('symptoms').value;
+      const age = parseInt(document.getElementById('age').value);
+      const gender = document.getElementById('gender').value;
+      const severity = document.getElementById('severity').value;
+
+      // Show results section and loading spinner
+      const resultsSection = document.getElementById('resultsSection');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const diagnosisResults = document.getElementById('diagnosisResults');
+
+      resultsSection.classList.remove('hidden');
+      loadingSpinner.classList.remove('hidden');
+      diagnosisResults.innerHTML = '';
+      diagnosisResults.classList.add('hidden');
+
+      try {
+        // Call AI diagnosis API
+        const response = await fetch('http://127.0.0.1:5002/ai/diagnose', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            age: age,
+            symptoms: symptoms,
+            severity: severity,
+            gender: gender
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Hide loading spinner
+        loadingSpinner.classList.add('hidden');
+        diagnosisResults.classList.remove('hidden');
+
+        // Display results
+        if (result.success && result.diagnosis) {
+          displayDiagnosis(result.diagnosis);
+        } else {
+          diagnosisResults.innerHTML = `
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+              <p class="text-red-800">Error: ${result.error || 'Unknown error occurred'}</p>
+            </div>
+          `;
+        }
+
+      } catch (error) {
+        loadingSpinner.classList.add('hidden');
+        diagnosisResults.classList.remove('hidden');
+        diagnosisResults.innerHTML = `
+          <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+            <h4 class="font-semibold text-red-800 mb-2">Connection Error</h4>
+            <p class="text-red-700">${error.message}</p>
+            <p class="text-sm text-red-600 mt-2">Make sure the AI backend is running on port 5002</p>
+          </div>
+        `;
+      }
+    });
+
+    function displayDiagnosis(diagnosis) {
+      const diagnosisResults = document.getElementById('diagnosisResults');
+
+      let html = `
+        <div class="space-y-6">
+          <!-- Disclaimer -->
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+            <p class="text-sm text-yellow-800">${diagnosis.disclaimer || 'This is an AI-generated analysis.'}</p>
+          </div>
+
+          <!-- Primary Diagnosis -->
+          <div class="border border-blue-200 rounded-lg p-6 bg-blue-50">
+            <h3 class="text-xl font-semibold text-blue-800 mb-2">AI Analysis</h3>
+            <p class="text-blue-700 mb-2">${diagnosis.primary_diagnosis}</p>
+            <div class="text-sm text-blue-600 space-y-1">
+              <p>Overall Confidence: <span class="font-bold">${diagnosis.confidence}</span></p>
+              <p>Top Prediction: <span class="font-bold">${diagnosis.top_disease}</span></p>
+              ${diagnosis.model_info ? `<p>Model: ${diagnosis.model_info.type}</p>` : ''}
+              ${diagnosis.model_info ? `<p>Accuracy: ${diagnosis.model_info.accuracy}</p>` : ''}
+            </div>
+          </div>
+
+          <!-- Top Predictions -->
+          ${diagnosis.possible_conditions && diagnosis.possible_conditions.length > 0 ? `
+            <div class="border border-gray-200 rounded-lg p-6">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4">Top Predictions</h3>
+              <div class="space-y-3">
+                ${diagnosis.possible_conditions.map((cond, idx) => {
+                  const confidence = parseFloat(cond.confidence);
+                  let borderColor = 'border-gray-300';
+                  let bgColor = 'bg-gray-50';
+
+                  if (confidence >= 30) {
+                    borderColor = 'border-green-400';
+                    bgColor = 'bg-green-50';
+                  } else if (confidence >= 20) {
+                    borderColor = 'border-yellow-400';
+                    bgColor = 'bg-yellow-50';
+                  }
+
+                  return `
+                    <div class="border-l-4 ${borderColor} pl-4 py-2 ${bgColor} rounded-r">
+                      <div class="flex items-center justify-between mb-1">
+                        <h4 class="font-medium text-gray-800">#${cond.rank} ${cond.condition}</h4>
+                        <span class="text-sm font-semibold px-2 py-1 rounded ${confidence >= 30 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${cond.confidence}</span>
+                      </div>
+                      <div class="text-sm text-gray-600">
+                        ${cond.severity ? `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${cond.severity === 'High' ? 'bg-red-100 text-red-800' : cond.severity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">${cond.severity}</span>` : ''}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Recommendations -->
+          ${diagnosis.recommendations && diagnosis.recommendations.length > 0 ? `
+            <div class="border border-blue-200 rounded-lg p-6 bg-blue-50">
+              <h3 class="text-xl font-semibold text-blue-800 mb-3">Recommendations</h3>
+              <ul class="text-blue-700 space-y-2">
+                ${diagnosis.recommendations.map(rec => `<li class="flex items-start"><span class="text-blue-500 mr-2">•</span><span>${rec}</span></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          <!-- Urgency Warning -->
+          ${diagnosis.urgency === 'High' || diagnosis.urgency === 'Emergency' ? `
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+              <h4 class="font-semibold text-red-800 mb-2">⚠️ Urgent Medical Attention Required</h4>
+              <p class="text-red-700">This condition may require immediate medical attention.</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      diagnosisResults.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

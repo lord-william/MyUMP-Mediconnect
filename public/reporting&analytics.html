@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediConnect - Reports & Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/heroicons@2.0.18/20/solid.js"></script>
+    <script src="https://unpkg.com/heroicons@2.0.18/24/outline.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        height: 300px;
+        position: relative;
+      }
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
+  </head>
+  <body class="bg-white text-[#001F3F] font-sans flex flex-col min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white text-black shadow p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a href="clinicDashboard.html">
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+        <div class="hidden md:flex space-x-6">
+          <a href="clinicDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="appointmentManagement.html"
+            class="hover:text-blue-600 transition"
+            >Appointments</a
+          >
+          <a
+            href="inventoryManagement.html"
+            class="hover:text-blue-600 transition"
+            >Inventory</a
+          >
+          <a
+            href="reporting&analytics.html"
+            class="hover:text-blue-600 transition font-semibold border-b-2 border-blue-500"
+            >Reports</a
+          >
+          <a href="staff_add_tip.html" class="hover:text-blue-600 transition"
+            >Add Tips</a
+          >
+        </div>
+        <div class="relative text-sm">
+          <span id="userName" class="mr-2">Clinic Admin</span>
+          <button
+            id="profileBtn"
+            class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition"
+          >
+            MC
+          </button>
+          <div
+            class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded shadow-lg hidden"
+            id="profileDropdown"
+          >
+            <a
+              href="#"
+              id="logoutBtn"
+              class="block px-4 py-2 text-red-600 hover:bg-red-100 transition"
+              >Logout</a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Page Header -->
+    <section class="relative text-white text-center py-16 px-4 bg-[#0a2342]">
+      <div class="relative z-10 max-w-7xl mx-auto">
+        <h2 class="text-3xl font-semibold">
+          <svg
+            class="w-8 h-8 inline-block mr-2 text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path></svg
+          >Reports & Analytics
+        </h2>
+        <p class="mt-2 text-gray-200 text-lg">
+          Comprehensive insights and reporting for MediConnect
+        </p>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow space-y-10"
+    >
+      <!-- Controls -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label for="periodSelect" class="block font-medium mb-1"
+              >Date Range</label
+            >
+            <select id="periodSelect" class="w-full border rounded p-2">
+              <option>Select Date Range</option>
+              <option value="1month">1 Month</option>
+              <option value="3months">3 Months</option>
+              <option value="6months">6 Months</option>
+              <option value="12months">12 Months</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="startDate" class="block font-medium mb-1"
+              >Start Date</label
+            >
+            <input
+              type="date"
+              id="startDate"
+              class="w-full border rounded p-2"
+              disabled
+            />
+          </div>
+          <div>
+            <label for="endDate" class="block font-medium mb-1">End Date</label>
+            <input
+              type="date"
+              id="endDate"
+              class="w-full border rounded p-2"
+              disabled
+            />
+          </div>
+          <div>
+            <label for="reportType" class="block font-medium mb-1"
+              >Report Type</label
+            >
+            <select id="reportType" class="w-full border rounded p-2">
+              <option value="all">All Reports</option>
+              <option value="appointments">Appointments</option>
+              <option value="inventory">Inventory</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4">
+          <button
+            onclick="generateReports()"
+            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
+          >
+            <svg
+              class="w-5 h-5 inline-block mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              ></path></svg
+            >Generate Reports
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="bg-white p-6 rounded-2xl shadow text-center border-t-4 border-yellow-400"
+        >
+          <div class="text-3xl mb-2">
+            <svg
+              class="w-8 h-8 mx-auto text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
+            </svg>
+          </div>
+          <div id="totalAppointments" class="text-2xl font-bold">0</div>
+          <div class="text-gray-600">Total Appointments</div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-2xl shadow text-center border-t-4 border-yellow-400"
+        >
+          <div class="text-3xl mb-2">
+            <svg
+              class="w-8 h-8 mx-auto text-purple-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+          </div>
+          <div id="inventoryValue" class="text-2xl font-bold">0</div>
+          <div class="text-gray-600">Inventory Stock</div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-2xl shadow text-center border-t-4 border-yellow-400"
+        >
+          <div class="text-3xl mb-2">
+            <svg
+              class="w-8 h-8 mx-auto text-green-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+          </div>
+          <div id="totalPatients" class="text-2xl font-bold">0</div>
+          <div class="text-gray-600">Active Patients</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-4 rounded-2xl shadow">
+          <h3 class="font-semibold text-[#001F3F] mb-2">
+            Daily Appointments Trend
+          </h3>
+          <div class="chart-container">
+            <canvas id="appointmentsChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow">
+          <h3 class="font-semibold text-[#001F3F] mb-2">
+            Appointment Status Distribution
+          </h3>
+          <div class="chart-container">
+            <canvas id="statusChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow">
+          <h3 class="font-semibold text-[#001F3F] mb-2">Top Diagnosis Types</h3>
+          <div class="chart-container">
+            <canvas id="diagnosisChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow">
+          <h3 class="font-semibold text-[#001F3F] mb-2">Inventory Status</h3>
+          <div class="w-full h-64">
+            <canvas id="inventoryChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Tables -->
+      <div class="space-y-10">
+        <!-- Appointments Report -->
+        <div>
+          <h2 class="text-2xl font-bold text-[#001F3F] mb-4">
+            <svg
+              class="w-6 h-6 inline-block mr-2 text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+              ></path></svg
+            >Appointments Report
+          </h2>
+          <div class="flex flex-wrap gap-4 mb-4">
+            <button
+              onclick="exportToPDF('appointments')"
+              class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors duration-200 font-medium"
+            >
+              <svg
+                class="w-4 h-4 inline-block mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Export PDF
+            </button>
+            <button
+              onclick="exportToCSV('appointments')"
+              class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors duration-200 font-medium"
+            >
+              <svg
+                class="w-4 h-4 inline-block mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                ></path>
+              </svg>
+              Export CSV
+            </button>
+          </div>
+          <div class="overflow-x-auto bg-white rounded-2xl shadow">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-[#001F3F] text-white">
+                <tr>
+                  <th class="p-3">Patient</th>
+                  <th class="p-3">Date</th>
+                  <th class="p-3">Time</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Symptoms</th>
+                </tr>
+              </thead>
+              <tbody
+                id="appointmentsTableBody"
+                class="divide-y divide-gray-200"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Inventory Report -->
+        <div>
+          <h2 class="text-2xl font-bold text-[#001F3F] mb-4">
+            <svg
+              class="w-6 h-6 inline-block mr-2 text-purple-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path></svg
+            >Inventory Report
+          </h2>
+          <div class="flex flex-wrap gap-4 mb-4">
+            <button
+              onclick="exportToPDF('inventory')"
+              class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors duration-200 font-medium"
+            >
+              <svg
+                class="w-4 h-4 inline-block mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Export PDF
+            </button>
+            <button
+              onclick="exportToCSV('inventory')"
+              class="bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors duration-200 font-medium"
+            >
+              <svg
+                class="w-4 h-4 inline-block mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                ></path>
+              </svg>
+              Export CSV
+            </button>
+          </div>
+          <div class="overflow-x-auto bg-white rounded-2xl shadow">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-[#001F3F] text-white">
+                <tr>
+                  <th class="p-3">Item</th>
+                  <th class="p-3">Quantity</th>
+                  <th class="p-3">Expiry Date</th>
+                  <th class="p-3">Category</th>
+                  <th class="p-3">Last Restocked</th>
+                </tr>
+              </thead>
+              <tbody
+                id="inventoryTableBody"
+                class="divide-y divide-gray-200"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      id="contact"
+      class="bg-blue-900 text-white text-center py-6 text-sm"
+    >
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+      // Profile Dropdown
+      const profileBtn = document.getElementById("profileBtn");
+      const profileDropdown = document.getElementById("profileDropdown");
+
+      if (profileBtn) {
+        profileBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          profileDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (
+            !profileDropdown.contains(e.target) &&
+            !profileBtn.contains(e.target)
+          ) {
+            profileDropdown.classList.add("hidden");
+          }
+        });
+      }
+
+      // Date Range Filter Logic
+      function setDateRange(period) {
+        const endDate = new Date(); // Current date as reference
+        const startDate = new Date(endDate);
+        const startInput = document.getElementById("startDate");
+        const endInput = document.getElementById("endDate");
+
+        // Enable/disable date inputs based on period
+        if (period === "custom") {
+          startInput.disabled = false;
+          endInput.disabled = false;
+          startInput.value = "";
+          endInput.value = "";
+        } else {
+          startInput.disabled = true;
+          endInput.disabled = true;
+
+          // Calculate start date based on selected period
+          if (period === "1month") {
+            startDate.setMonth(endDate.getMonth() - 1);
+          } else if (period === "3months") {
+            startDate.setMonth(endDate.getMonth() - 3);
+          } else if (period === "6months") {
+            startDate.setMonth(endDate.getMonth() - 6);
+          } else if (period === "12months") {
+            startDate.setMonth(endDate.getMonth() - 12);
+          }
+
+          // Format dates as YYYY-MM-DD
+          const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+          };
+
+          startInput.value = formatDate(startDate);
+          endInput.value = formatDate(endDate);
+        }
+      }
+
+      // Event listener for period dropdown
+      document
+        .getElementById("periodSelect")
+        .addEventListener("change", (event) => {
+          setDateRange(event.target.value);
+        });
+
+      // Initialize with 1-month default
+      setDateRange("1month");
+    </script>
+
+    <!-- Main Dashboard Script -->
+    <script src="js/reporting&analytics.js"></script>
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - MediConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 font-sans text-[#0a2342]">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-blue-100 py-4">
+    <div class="container mx-auto flex justify-between items-center px-4">
+      <a href="landing.html">
+      <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21">
+
+      </a>
+    </div>
+  </header>
+
+   <!-- ✅ Notification Containers -->
+  <div id="errorContainer" class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span id="errorMessage">Something went wrong</span>
+  </div>
+
+  <div id="successContainer" class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span id="successMessage">Action completed successfully</span>
+  </div>
+
+  <!-- Login Container -->
+  <div class="max-w-md mx-auto mt-16 bg-white rounded-2xl shadow-xl p-8">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-semibold text-[#0a2342]">Welcome Back</h1>
+      <p class="text-sm text-gray-500">Sign in to your MediConnect account</p>
+    </div>
+
+
+    <!-- Form -->
+    <form action="/login" method="POST" class="space-y-5">
+      <div>
+        <label for="email" class="block text-sm font-medium mb-1">Email Address</label>
+        <input type="email" id="email" name="email" required
+               pattern="^[a-zA-Z0-9._%+-]+@ump\.ac\.za$"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"/>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium mb-1">Password</label>
+        <input type="password" id="password" name="password" required
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"/>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-transform transform hover:scale-[1.02]">
+        Sign In
+      </button>
+    </form>
+
+    <!-- Divider -->
+    <div class="relative my-6">
+      <hr class="border-gray-300" />
+      <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-2 text-sm text-gray-500">or</span>
+    </div>
+
+    <!-- Links -->
+    <div class="text-center text-sm">
+      <p>Don't have an account?
+        <a href="signup.html" class="text-blue-600 hover:underline">Sign up here</a>
+      </p>
+      <p class="mt-2">
+        <a href="/forgotPassword.html" class="text-blue-600 hover:underline">Forgot your password?</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    //Notification Functions
+function showError(message, duration = 4000) {
+    const container = document.getElementById("errorContainer");
+    const msg = document.getElementById("errorMessage");
+    msg.textContent = message;
+    container.classList.remove("hidden");
+    setTimeout(() => container.classList.add("hidden"), duration);
+  }
+
+  function showSuccess(message, duration = 4000) {
+    const container = document.getElementById("successContainer");
+    const msg = document.getElementById("successMessage");
+    msg.textContent = message;
+    container.classList.remove("hidden");
+    setTimeout(() => container.classList.add("hidden"), duration);
+  }
+  
+// Frontend login - Keep the backend redirect but manage history properly
+document.querySelector('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const result = await res.json();
+    
+    if (!res.ok) {
+      showError('Invalid Credentials');
+      return;
+    }
+
+    // Save minimal data (token for backend verification)
+    sessionStorage.setItem("supabase_token", result.token);
+    
+    // Backend redirect but replace history to prevent back button issues
+    window.location.href = `/auth/redirect?token=${result.token}`;
+
+  } catch (err) {
+    console.error('Login error', err);
+    showError('An error occurred while logging in: ');
+  }
+});
+  </script>
+</body>
+</html>

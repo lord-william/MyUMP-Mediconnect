@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/c/Users/Lenovo/Downloads/MediConnect/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

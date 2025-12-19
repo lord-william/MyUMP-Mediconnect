@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediConnect - Appointments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Custom scrollbar for diagnosis column */
+    .diagnosis-cell {
+      max-height: 150px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+    
+    .diagnosis-cell::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .diagnosis-cell::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .diagnosis-cell::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-white text-[#001F3F] font-sans flex flex-col min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-white text-black shadow p-4 sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <a href="clinicDashboard.html">
+        <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21">
+      </a>
+      <div class="hidden md:flex space-x-6">
+        <a href="clinicDashboard.html" class="hover:text-blue-600 transition">Dashboard</a>
+        <a href="appointmentManagement.html" class="hover:text-blue-600 transition font-semibold border-b-2 border-blue-500">Appointments</a>
+        <a href="inventoryManagement.html" class="hover:text-blue-600 transition">Inventory</a>
+        <a href="reporting&analytics.html" class="hover:text-blue-600 transition">Reports</a>
+        <a href="staff_add_tip.html" class="hover:text-blue-600 transition">Add Tips</a>
+      </div>
+      <div class="relative text-sm">
+        <span id="userName" class="mr-2">Clinic Admin</span>
+        <button 
+          id="profileBtn"
+          class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition">
+          MC
+        </button>
+        <div class="absolute right-0 mt-2 w-48 bg-white text-[#001F3F] rounded shadow-lg hidden" id="profileDropdown">
+          <a href="staffProfile.html" class="block px-4 py-2 hover:bg-blue-50 transition">Profile Settings</a>
+          <a href="#" id="logoutBtn" class="block px-4 py-2 text-red-600 hover:bg-red-100 transition">Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Notification Containers -->
+  <div id="errorContainer" class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span id="errorMessage">Something went wrong</span>
+  </div>
+
+  <div id="successContainer" class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span id="successMessage">Action completed successfully</span>
+  </div>
+
+  <!-- Main Section -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow">
+    
+    <!-- Heading -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-semibold text-[#001F3F]">Manage Appointments</h2>
+      <p class="text-sm opacity-70">View, filter, and manage all scheduled appointments below.</p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="bg-white p-6 rounded-2xl shadow border border-blue-100 mb-6 flex flex-wrap gap-4">
+      <div class="flex flex-col">
+        <label class="text-xs text-gray-600 mb-1">Filter by Date</label>
+        <input type="date" id="filterDate" class="border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+      <div class="flex flex-col">
+        <label class="text-xs text-gray-600 mb-1">Filter by Time</label>
+        <select id="filterTime" class="border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          <option value="">All Times</option>
+          <option value="09:00 - 10:00">09:00 - 10:00</option>
+          <option value="10:00 - 11:00">10:00 - 11:00</option>
+          <option value="11:00 - 12:00">11:00 - 12:00</option>
+          <option value="12:00 - 13:00">12:00 - 13:00</option>
+          <option value="13:00 - 14:00">13:00 - 14:00</option>
+          <option value="14:00 - 15:00">14:00 - 15:00</option>
+          <option value="15:00 - 16:00">15:00 - 16:00</option>
+        </select>
+      </div>
+      <div class="flex flex-col">
+        <label class="text-xs text-gray-600 mb-1">Search Student (Name/Surname)</label>
+        <input type="text" id="filterStudent" placeholder="Enter name or surname" class="border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+      </div>
+      <div class="flex flex-col">
+        <label class="text-xs text-gray-600 mb-1">Filter by Status</label>
+        <select id="filterStatus" class="border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>   
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="no-show">No-show</option>
+        </select>
+      </div>
+      <div class="flex flex-col justify-end">
+        <button onclick="applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+          Apply Filters
+        </button>
+      </div>
+      <div class="flex flex-col justify-end">
+        <button onclick="clearFilters()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition">
+          Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="hidden text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">Loading appointments...</p>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="overflow-x-auto bg-white rounded-2xl shadow border border-blue-100">
+      <table class="min-w-full text-sm text-left text-gray-700">
+        <thead class="bg-gray-100 text-gray-700">
+          <tr>
+            <th class="py-3 px-4 font-semibold">Date</th>
+            <th class="py-3 px-4 font-semibold">Time</th>
+            <th class="py-3 px-4 font-semibold">Student</th>
+            <th class="py-3 px-4 font-semibold">Status</th>
+            <th class="py-3 px-4 font-semibold">Symptoms</th>
+            <th class="py-3 px-4 font-semibold">AI Diagnosis</th>
+            <th class="py-3 px-4 font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentsTableBody" class="divide-y divide-gray-200">
+          <!-- Rows dynamically inserted -->
+          <tr id="noDataRow" class="hidden">
+            <td colspan="7" class="py-8 text-center text-gray-500">
+              No appointments found. Try adjusting your filters or check back later.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Statistics Summary --
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-blue-50 rounded-lg p-4">
+        <div class="text-2xl font-bold text-blue-600" id="totalCount">0</div>
+        <div class="text-sm text-blue-800">Total Appointments</div>
+      </div>
+      <div class="bg-yellow-50 rounded-lg p-4">
+        <div class="text-2xl font-bold text-yellow-600" id="pendingCount">0</div>
+        <div class="text-sm text-yellow-800">Pending</div>
+      </div>
+      <div class="bg-green-50 rounded-lg p-4">
+        <div class="text-2xl font-bold text-green-600" id="completedCount">0</div>
+        <div class="text-sm text-green-800">Completed</div>
+      </div>
+      <div class="bg-red-50 rounded-lg p-4">
+        <div class="text-2xl font-bold text-red-600" id="cancelledCount">0</div>
+        <div class="text-sm text-red-800">Cancelled</div>
+      </div>
+    </div>
+  </main>-->
+
+  <!-- Footer -->
+  <footer id="contact" class="bg-blue-900 w-100 text-white text-center py-6 text-sm">
+    <p>© 2025 MediConnect. All rights reserved.</p>
+    <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+  </footer>
+
+  <!-- Global Confirm Modal -->
+  <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg w-96 p-6 text-center">
+      <div class="mb-4">
+        <svg class="mx-auto h-12 w-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold mb-4" id="confirmMessage">Are you sure?</h2>
+      <div class="flex justify-center gap-4">
+        <button id="confirmYes" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition">Yes</button>
+        <button id="confirmNo" class="bg-gray-300 px-6 py-2 rounded-lg hover:bg-gray-400 transition">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Profile Dropdown functionality
+    const profileBtn = document.getElementById("profileBtn");
+    const profileDropdown = document.getElementById("profileDropdown");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    if (profileBtn && profileDropdown) {
+      profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileDropdown.classList.toggle("hidden");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+          profileDropdown.classList.add("hidden");
+        }
+      });
+    }
+
+    // Logout functionality
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        try {
+          sessionStorage.clear();
+          localStorage.clear();
+        } catch (error) {
+          console.warn('Storage clearing failed:', error);
+        }
+        window.location.replace("landing.html");
+      });
+    }
+
+    // Statistics update function
+    function updateStatistics(appointmentData) {
+      const total = appointmentData.length;
+      const pending = appointmentData.filter(apt => apt.status === 'pending' || apt.status === 'confirmed').length;
+      const completed = appointmentData.filter(apt => apt.status === 'completed').length;
+      const cancelled = appointmentData.filter(apt => apt.status === 'cancelled' || apt.status === 'no-show').length;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('completedCount').textContent = completed;
+      document.getElementById('cancelledCount').textContent = cancelled;
+    }
+
+    // Override the global renderTable function to include statistics
+    const originalRenderTable = window.renderTable;
+    window.renderTable = function(data) {
+      if (originalRenderTable) {
+        originalRenderTable(data);
+      }
+      updateStatistics(data);
+      
+      // Show/hide no data row
+      const noDataRow = document.getElementById('noDataRow');
+      if (noDataRow) {
+        noDataRow.classList.toggle('hidden', data.length > 0);
+      }
+    };
+
+    // Allow Enter key to apply filters from any input field
+    const filterInputs = ['filterDate', 'filterTime', 'filterStudent', 'filterStatus'];
+    filterInputs.forEach(inputId => {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (window.applyFilters) {
+              window.applyFilters();
+            }
+          }
+        });
+      }
+    });
+
+    // Auto-clear filters on page load if needed
+    document.addEventListener('DOMContentLoaded', function() {
+      // Optional: Clear filters on page load
+      setTimeout(() => {
+        const hasFilters = document.getElementById('filterDate').value ||
+                          document.getElementById('filterTime').value ||
+                          document.getElementById('filterStudent').value ||
+                          document.getElementById('filterStatus').value;
+        
+        if (!hasFilters) {
+          // No filters applied, show all data
+          console.log('No filters detected on page load');
+        }
+      }, 100);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Ctrl/Cmd + R to refresh
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        if (window.loadAppointments) {
+          window.loadAppointments();
+        }
+      }
+      
+      // Escape to clear filters
+      if (e.key === 'Escape') {
+        if (window.clearFilters) {
+          window.clearFilters();
+        }
+      }
+    });
+
+    // Enhanced status update with optimistic UI updates
+    window.changeStatusOptimistic = function(id, newStatus) {
+      // Immediately update UI for better UX
+      const statusElements = document.querySelectorAll(`[onclick*="changeStatus('${id}',"]`);
+      statusElements.forEach(el => {
+        el.style.opacity = '0.5';
+        el.disabled = true;
+      });
+      
+      // Call the actual change status function
+      if (window.changeStatus) {
+        window.changeStatus(id, newStatus).finally(() => {
+          // Re-enable buttons after operation
+          statusElements.forEach(el => {
+            el.style.opacity = '1';
+            el.disabled = false;
+          });
+        });
+      }
+    };
+
+    // Add click handlers for better mobile experience
+    document.addEventListener('click', function(e) {
+      if (e.target.tagName === 'TD') {
+        e.target.style.backgroundColor = '#f8fafc';
+        setTimeout(() => {
+          e.target.style.backgroundColor = '';
+        }, 200);
+      }
+    });
+  </script>
+  
+  <!-- Main appointment management script -->
+  <script src="js/appointmentManagement.js"></script>
+<script src="js/navbar.js"></script>
+</body>
+</html>

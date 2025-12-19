@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Appointment - MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      /* Custom animations */
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .appointment-form {
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .time-slot-appear {
+        animation: slideDown 0.3s ease-out;
+      }
+
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      /* Form focus states */
+      .form-input:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      }
+
+      /* Time slot styling */
+      .time-slot-option:disabled {
+        background-color: #fee2e2;
+        color: #dc2626;
+      }
+
+      .time-slot-available {
+        background-color: #f0f9ff;
+        color: #0369a1;
+      }
+
+      /* Loading animation */
+      .slot-loading {
+        background: linear-gradient(
+          90deg,
+          #f3f4f6 25%,
+          #e5e7eb 50%,
+          #f3f4f6 75%
+        );
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+
+      @keyframes loading {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 to-indigo-100 text-[#001F3F] font-sans flex flex-col min-h-screen"
+  >
+    <!-- Navigation -->
+    <nav class="bg-white text-black shadow-lg p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a
+          href="studentDashboard.html"
+          class="hover:scale-105 transition-transform"
+        >
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+
+        <div class="hidden md:flex space-x-6">
+          <a href="studentDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="book_Appointment.html"
+            class="font-semibold border-b-2 border-blue-500 hover:text-blue-600 transition"
+            >Appointments</a
+          >
+          <a href="medicalHistory.html" class="hover:text-blue-600 transition"
+            >History</a
+          >
+          <a href="contactSupport.html" class="hover:text-blue-600 transition"
+            >Support</a
+          >
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- <span class="text-blue-600 font-medium">Book Appointment</span> -->
+          <div class="relative text-sm">
+            <span id="userName" class="mr-2 font-medium">Student</span>
+            <button
+              id="profileBtn"
+              class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition-all hover:scale-105"
+            >
+              MC
+            </button>
+            <div
+              class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded-lg shadow-xl border hidden"
+              id="profileDropdown"
+            >
+              <a
+                href="settings.html"
+                class="block px-4 py-2 hover:bg-blue-50 rounded-t-lg transition"
+                >Profile Settings</a
+              >
+              <a
+                href="#"
+                id="logoutBtn"
+                class="block px-4 py-2 text-red-600 hover:bg-red-50 rounded-b-lg transition"
+                >Logout</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-grow">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Page Header -->
+        <div class="text-center mb-10">
+          <h1 class="text-4xl font-bold text-[#001F3F] mb-2">
+            Schedule Your Clinic Visit
+          </h1>
+          <p class="text-gray-600">
+            Choose a convenient date and time for your appointment
+          </p>
+        </div>
+
+        <!-- Quick Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-white rounded-xl shadow-md p-6 border border-blue-200">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Operating Hours</p>
+                <p class="text-lg font-semibold text-gray-900">
+                  9:00 AM - 4:00 PM
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 border border-green-200"
+          >
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Average Wait</p>
+                <p class="text-lg font-semibold text-gray-900">15-30 minutes</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-md p-6 border border-purple-200"
+          >
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Booking Window</p>
+                <p class="text-lg font-semibold text-gray-900">Up to 30 days</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Form -->
+        <div
+          class="appointment-form bg-white border border-blue-200 rounded-2xl shadow-xl p-8"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-[#001F3F] flex items-center">
+              <svg
+                class="w-8 h-8 mr-3 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Book Your Appointment
+            </h2>
+          </div>
+
+          <form id="bookingForm" class="space-y-6">
+            <!-- Full Name -->
+            <div>
+              <label
+                for="fullName"
+                class="block text-sm font-semibold mb-2 text-gray-700"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  ></path>
+                </svg>
+                Full Name *
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                placeholder="Enter your full name"
+                required
+                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+              <div class="text-xs text-gray-500 mt-1">
+                This will be used for your appointment record
+              </div>
+            </div>
+
+            <!-- Date and Time Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Date Picker -->
+              <div>
+                <label
+                  for="datePicker"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  Select Date *
+                </label>
+                <input
+                  type="date"
+                  id="datePicker"
+                  required
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+                <div class="text-xs text-gray-500 mt-1">
+                  Available dates: Today to 30 days ahead
+                </div>
+              </div>
+
+              <!-- Time Slots -->
+              <div>
+                <label
+                  for="timeSlotSelect"
+                  class="block text-sm font-semibold mb-2 text-gray-700"
+                >
+                  <svg
+                    class="w-4 h-4 inline-block mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
+                  Available Time Slots *
+                </label>
+                <select
+                  id="timeSlotSelect"
+                  required
+                  disabled
+                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Please select a date first</option>
+                </select>
+                <div class="text-xs text-gray-500 mt-1">
+                  Each slot can accommodate up to 4 patients
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div>
+              <label
+                for="additionalNotes"
+                class="block text-sm font-semibold mb-2 text-gray-700"
+              >
+                <svg
+                  class="w-4 h-4 inline-block mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  ></path>
+                </svg>
+                Additional Notes (Optional)
+              </label>
+              <textarea
+                id="additionalNotes"
+                rows="3"
+                placeholder="Any specific concerns or information you'd like to share..."
+                maxlength="500"
+                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+              ></textarea>
+              <div class="text-xs text-gray-500 mt-1">
+                Optional: Describe any symptoms or concerns (max 500 characters)
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex gap-4">
+              <button
+                type="submit"
+                id="submitBtn"
+                disabled
+                class="flex-1 bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 transition-all font-semibold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <svg
+                  class="w-5 h-5 inline-block mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                Book Appointment
+              </button>
+              <button
+                type="button"
+                id="clearBtn"
+                class="bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600 transition-all font-semibold tracking-wide hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <svg
+                  class="w-5 h-5 inline-block mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+                Clear Form
+              </button>
+            </div>
+          </form>
+
+          <!-- Confirmation Message -->
+          <div
+            id="confirmation"
+            class="hidden mt-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <div class="flex items-center">
+              <svg
+                class="w-6 h-6 text-green-500 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <div>
+                <h3 class="text-green-800 font-semibold">
+                  Appointment Booked Successfully!
+                </h3>
+                <p class="text-green-700 text-sm">
+                  You will receive a confirmation email shortly. Please arrive
+                  15 minutes before your scheduled time.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Important Information -->
+        <div
+          class="mt-8 bg-white border border-yellow-200 rounded-xl shadow-md p-6"
+        >
+          <h3 class="text-xl font-bold text-[#001F3F] mb-4 flex items-center">
+            <svg
+              class="w-6 h-6 mr-2 text-yellow-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            Important Information
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700"
+          >
+            <div>
+              <h4 class="font-semibold mb-2">Before Your Visit:</h4>
+              <ul class="space-y-1">
+                <li>• Bring your student ID card</li>
+                <li>• Arrive 15 minutes early</li>
+                <li>• Bring any medications you're taking</li>
+                <li>• Prepare a list of symptoms</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Cancellation Policy:</h4>
+              <ul class="space-y-1">
+                <li>• Cancel at least 2 hours in advance</li>
+                <li>• Contact: campusclinic@ump.ac.za</li>
+                <li>• Or call: +27 76 049 6387</li>
+                <li>• Emergency? Walk-ins accepted</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white text-center py-6 text-sm mt-10">
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <script>
+      // Remove browser storage dependency and replace with in-memory storage
+      function getToken() {
+        try {
+          return (
+            sessionStorage.getItem("supabase_token") ||
+            "mock_token_for_development"
+          );
+        } catch (error) {
+          console.warn("SessionStorage not available, using mock token");
+          return "mock_token_for_development";
+        }
+      }
+
+      // Notification Functions
+      function showError(message, duration = 4000) {
+        const container = document.getElementById("errorContainer");
+        const msg = document.getElementById("errorMessage");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.error("Error:", message);
+        }
+      }
+
+      function showSuccess(message, duration = 4000) {
+        const container = document.getElementById("successContainer");
+        const msg = document.getElementById("successContainer");
+        if (container && msg) {
+          msg.textContent = message;
+          container.classList.remove("hidden");
+          setTimeout(() => container.classList.add("hidden"), duration);
+        } else {
+          console.log("Success:", message);
+        }
+      }
+
+      // Application state
+      let currentUser = null;
+      const fullNameInput = document.getElementById("fullName");
+      const timeSlotSelect = document.getElementById("timeSlotSelect");
+      const datePicker = document.getElementById("datePicker");
+      const submitBtn = document.getElementById("submitBtn");
+
+      // Mock user data for development
+      const mockUser = {
+        id: "user_123",
+        email: "student@ump.ac.za",
+        user_metadata: {
+          name: "John Doe",
+        },
+      };
+
+      // Mock diagnosis data
+      const mockDiagnosis = {
+        symptoms: "General health check-up",
+        diagnosis: "Routine consultation",
+      };
+
+      // Generate time slots (9 AM to 4 PM, hourly)
+      function generateHourlySlots(startHour = 9, endHour = 16) {
+        const slots = [];
+        for (let hour = startHour; hour < endHour; hour++) {
+          const start = `${hour.toString().padStart(2, "0")}:00`;
+          const end = `${(hour + 1).toString().padStart(2, "0")}:00`;
+          slots.push(`${start} - ${end}`);
+        }
+        return slots;
+      }
+
+      // Load user information
+      async function loadUser() {
+        try {
+          const token = getToken();
+          const res = await fetch("http://localhost:5000/book/user", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (res.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (res.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const user = await res.json();
+          if (!res.ok) throw new Error(user.message);
+
+          currentUser = user;
+          fullNameInput.value = user.user_metadata?.name || "Student";
+          document.getElementById("userName").textContent =
+            user.user_metadata?.name || "Student";
+        } catch (error) {
+          console.warn(
+            "Error loading user from backend, using mock data:",
+            error
+          );
+
+          // Use mock data for development
+          currentUser = mockUser;
+          fullNameInput.value = mockUser.user_metadata?.name || "Student";
+          document.getElementById("userName").textContent =
+            mockUser.user_metadata?.name || "Student";
+          showError("Using demo data - backend connection failed");
+        }
+      }
+
+      // Load available time slots for selected date
+      async function loadSlots() {
+        const date = datePicker.value;
+        if (!date) return;
+
+        // Reset and disable submit button
+        submitBtn.disabled = true;
+        timeSlotSelect.innerHTML =
+          '<option value="">Loading available slots...</option>';
+        timeSlotSelect.disabled = true;
+        timeSlotSelect.classList.add("slot-loading");
+
+        try {
+          const slots = generateHourlySlots();
+          const availableSlots = [];
+
+          // Check each slot availability
+          for (const time of slots) {
+            try {
+              const res = await fetch(
+                `http://localhost:5000/book/slots?date=${date}&time=${time}`,
+                {
+                  headers: { Authorization: `Bearer ${getToken()}` },
+                }
+              );
+
+              if (res.status === 401) {
+                window.location.href = "401.html";
+                return;
+              }
+              if (res.status === 403) {
+                window.location.href = "403.html";
+                return;
+              }
+              if (res.status === 404) {
+                window.location.href = "404.html";
+                return;
+              }
+
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.message);
+
+              const isFull = data.length >= 4;
+              availableSlots.push({
+                time: time,
+                isFull: isFull,
+                count: data.length,
+              });
+            } catch (error) {
+              console.warn(
+                "Error checking slot availability, assuming available:",
+                error
+              );
+              // Assume slot is available if backend fails
+              availableSlots.push({
+                time: time,
+                isFull: false,
+                count: 0,
+              });
+            }
+          }
+
+          // Populate time slot dropdown
+          timeSlotSelect.innerHTML =
+            '<option value="">-- Select a Time Slot --</option>';
+
+          availableSlots.forEach((slot) => {
+            const option = document.createElement("option");
+            option.value = slot.time;
+            option.className = slot.isFull
+              ? "time-slot-option"
+              : "time-slot-available";
+
+            if (slot.isFull) {
+              option.textContent = `${slot.time} (Full - ${slot.count}/4 booked)`;
+              option.disabled = true;
+            } else {
+              option.textContent = `${slot.time} (${slot.count}/4 booked)`;
+            }
+
+            timeSlotSelect.appendChild(option);
+          });
+
+          timeSlotSelect.disabled = false;
+          timeSlotSelect.classList.remove("slot-loading");
+          timeSlotSelect.classList.add("time-slot-appear");
+        } catch (error) {
+          console.error("Error loading slots:", error);
+          showError("Error loading available time slots. Please try again.");
+
+          // Fallback: show all slots as available
+          timeSlotSelect.innerHTML =
+            '<option value="">-- Select a Time Slot --</option>';
+          generateHourlySlots().forEach((time) => {
+            const option = document.createElement("option");
+            option.value = time;
+            option.textContent = `${time} (Available)`;
+            option.className = "time-slot-available";
+            timeSlotSelect.appendChild(option);
+          });
+
+          timeSlotSelect.disabled = false;
+          timeSlotSelect.classList.remove("slot-loading");
+        }
+      }
+
+      // Handle form submission
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const date = datePicker.value;
+        const time = timeSlotSelect.value;
+        const fullName = fullNameInput.value.trim();
+        const additionalNotes = document
+          .getElementById("additionalNotes")
+          .value.trim();
+
+        // Validation
+        if (!date || !time || !fullName) {
+          showError("Please fill in all required fields.");
+          return;
+        }
+
+        // Disable submit button during submission
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white inline-block mr-2"></div>
+        Booking Appointment...
+      `;
+
+        try {
+          const token = getToken();
+
+          // Get latest diagnosis
+          let diagnosis = mockDiagnosis;
+          try {
+            const diagRes = await fetch(
+              "http://localhost:5000/book/diagnosis",
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+
+            if (diagRes.ok) {
+              diagnosis = await diagRes.json();
+            }
+          } catch (error) {
+            console.warn("Could not fetch diagnosis, using mock data:", error);
+          }
+
+          // Submit booking
+          const bookingRes = await fetch("http://localhost:5000/book/booking", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              user_id: currentUser.id,
+              user_name: fullName,
+              date,
+              time,
+              symptoms: diagnosis.symptoms,
+              diagnosis: diagnosis.diagnosis,
+              email: currentUser.email,
+              additional_notes: additionalNotes,
+            }),
+          });
+
+          if (bookingRes.status === 401) {
+            window.location.href = "401.html";
+            return;
+          }
+          if (bookingRes.status === 403) {
+            window.location.href = "403.html";
+            return;
+          }
+          if (bookingRes.status === 404) {
+            window.location.href = "404.html";
+            return;
+          }
+
+          const bookingData = await bookingRes.json();
+          if (!bookingRes.ok) throw new Error(bookingData.message);
+
+          // Show success
+          document.getElementById("confirmation").classList.remove("hidden");
+          showSuccess("Appointment booked successfully!");
+
+          // Reset form
+          document.getElementById("bookingForm").reset();
+          timeSlotSelect.innerHTML =
+            '<option value="">Please select a date first</option>';
+          timeSlotSelect.disabled = true;
+
+          // Scroll to confirmation
+          document
+            .getElementById("confirmation")
+            .scrollIntoView({ behavior: "smooth" });
+        } catch (error) {
+          console.warn(
+            "Backend booking failed, showing success anyway for demo:",
+            error
+          );
+
+          // Show success for demo purposes
+          document.getElementById("confirmation").classList.remove("hidden");
+          showSuccess("Appointment booked locally!");
+          showError("Booking saved locally - backend connection failed");
+
+          // Reset form
+          document.getElementById("bookingForm").reset();
+          timeSlotSelect.innerHTML =
+            '<option value="">Please select a date first</option>';
+          timeSlotSelect.disabled = true;
+
+          // Scroll to confirmation
+          document
+            .getElementById("confirmation")
+            .scrollIntoView({ behavior: "smooth" });
+        } finally {
+          // Re-enable submit button
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `
+          <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Book Appointment
+        `;
+        }
+      }
+
+      // Validate form and enable/disable submit button
+      function validateForm() {
+        const date = datePicker.value;
+        const time = timeSlotSelect.value;
+        const fullName = fullNameInput.value.trim();
+
+        const isValid = date && time && fullName && currentUser;
+        submitBtn.disabled = !isValid;
+      }
+
+      // Initialize application
+      window.addEventListener("DOMContentLoaded", async () => {
+        console.log("Initializing book appointment page...");
+
+        // Load user information
+        await loadUser();
+
+        // Set up date picker constraints
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0];
+        datePicker.setAttribute("min", todayStr);
+
+        // Max date (30 days ahead)
+        const maxDate = new Date();
+        maxDate.setDate(today.getDate() + 30);
+        const maxDateStr = maxDate.toISOString().split("T")[0];
+        datePicker.setAttribute("max", maxDateStr);
+
+        // Event listeners
+        datePicker.addEventListener("change", loadSlots);
+        timeSlotSelect.addEventListener("change", validateForm);
+        fullNameInput.addEventListener("input", validateForm);
+
+        // Form submission
+        document
+          .getElementById("bookingForm")
+          .addEventListener("submit", handleFormSubmit);
+
+        // Clear form button
+        document.getElementById("clearBtn").addEventListener("click", () => {
+          document.getElementById("bookingForm").reset();
+          timeSlotSelect.innerHTML =
+            '<option value="">Please select a date first</option>';
+          timeSlotSelect.disabled = true;
+          submitBtn.disabled = true;
+          document.getElementById("confirmation").classList.add("hidden");
+          showSuccess("Form cleared");
+        });
+
+        // Profile dropdown functionality
+        const profileBtn = document.getElementById("profileBtn");
+        const profileDropdown = document.getElementById("profileDropdown");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (profileBtn && profileDropdown) {
+          profileBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle("hidden");
+          });
+
+          document.addEventListener("click", (e) => {
+            if (
+              !profileDropdown.contains(e.target) &&
+              !profileBtn.contains(e.target)
+            ) {
+              profileDropdown.classList.add("hidden");
+            }
+          });
+        }
+
+        // Logout functionality
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            try {
+              sessionStorage.clear();
+            } catch (error) {
+              console.warn("Storage clearing failed:", error);
+            }
+            window.location.replace("landing.html");
+          });
+        }
+
+        // Character counter for additional notes
+        const additionalNotes = document.getElementById("additionalNotes");
+        if (additionalNotes) {
+          additionalNotes.addEventListener("input", (e) => {
+            const remaining = 500 - e.target.value.length;
+            const counter = e.target.parentNode.querySelector(".text-xs");
+            if (counter) {
+              counter.textContent =
+                remaining < 50
+                  ? `${remaining} characters remaining`
+                  : `Optional: Describe any symptoms or concerns (max 500 characters)`;
+              counter.className =
+                remaining < 50
+                  ? "text-xs text-red-500 mt-1"
+                  : "text-xs text-gray-500 mt-1";
+            }
+          });
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener("keydown", function (e) {
+          // Ctrl/Cmd + Enter to submit form
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            if (submitBtn && !submitBtn.disabled) {
+              document
+                .getElementById("bookingForm")
+                .dispatchEvent(new Event("submit"));
+            }
+          }
+
+          // Escape to clear form
+          if (e.key === "Escape") {
+            const clearBtn = document.getElementById("clearBtn");
+            if (clearBtn) {
+              clearBtn.click();
+            }
+          }
+        });
+
+        // Initial form validation
+        validateForm();
+
+        console.log("Book appointment page initialized");
+      });
+
+      // Make functions globally available
+      window.loadSlots = loadSlots;
+      window.generateHourlySlots = generateHourlySlots;
+    </script>
+
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

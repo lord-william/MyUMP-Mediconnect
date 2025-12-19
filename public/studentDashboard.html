@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediConnect - Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/heroicons@2.0.18/20/solid.js"></script>
+    <script src="https://unpkg.com/heroicons@2.0.18/24/outline.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-white text-[#001F3F] font-sans flex flex-col min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white text-black shadow p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a href="studentDashboard.html">
+          <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        </a>
+        <div class="hidden md:flex space-x-6">
+          <a
+            href="studentDashboard.html"
+            class="font-semibold border-b-2 border-blue-500 hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a href="medicalHistory.html" class="hover:text-blue-600 transition"
+            >History</a
+          >
+          <a href="contactSupport.html" class="hover:text-blue-600 transition"
+            >Support</a
+          >
+          <a href="healthTips.html" class="hover:text-blue-600 transition"
+            >Health Tips</a
+          >
+        </div>
+        <div class="relative text-sm">
+          <span id="userName" class="mr-2">Welcome, Student</span>
+          <button
+            id="profileBtn"
+            class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition"
+          >
+            MC
+          </button>
+          <!-- ✅ Fixed dropdown link -->
+          <div
+            class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded shadow-lg hidden"
+            id="profileDropdown"
+          >
+            <a
+              href="#"
+              id="logoutBtn"
+              class="block px-4 py-2 text-red-600 hover:bg-red-100 transition"
+              >Logout</a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ✅ Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative text-white text-center py-40 px-4 overflow-hidden">
+      <!-- Background video -->
+      <video
+        autoplay
+        loop
+        muted
+        playsinline
+        class="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src="media/3767959273-preview.mp4" type="video/mp4" />
+      </video>
+      <!-- Overlay -->
+      <div class="absolute inset-0 bg-[#0a2342]/70"></div>
+      <!-- Content -->
+      <div class="relative z-10">
+        <h2 id="welcomeHeading" class="text-3xl font-semibold text-white">
+          Welcome to MediConnect, ...
+        </h2>
+        <p class="text-white-700 mt-2">
+          Your health companion is ready to assist you today
+        </p>
+      </div>
+    </section>
+
+    <!-- Dashboard Cards -->
+    <main
+      class="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow"
+    >
+      <!-- Book Appointments -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Book Appointments</h3>
+        <p class="text-sm text-blue-700">
+          Schedule clinic visits with real-time availability and instant
+          confirmation.
+        </p>
+        <button
+          data-href="book_Appointment.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          Book Now
+        </button>
+      </div>
+
+      <!-- Medical History -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Medical History</h3>
+        <p class="text-sm text-blue-700">
+          Access your complete health records, prescriptions, and visit
+          summaries.
+        </p>
+        <button
+          data-href="medicalHistory.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          View History
+        </button>
+      </div>
+
+      <!-- Contact Support -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Contact Support</h3>
+        <p class="text-sm text-blue-700">
+          Get help from our dedicated support team available 24/7.
+        </p>
+        <button
+          data-href="contactSupport.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          Get Help
+        </button>
+      </div>
+
+      <!-- Enter Symptoms -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Enter Symptoms</h3>
+        <p class="text-sm text-blue-700">
+          Describe your symptoms and get AI-powered health insights.
+        </p>
+        <button
+          data-href="diagnosis.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          Start Diagnosis
+        </button>
+      </div>
+
+      <!-- Health Tips -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Health Tips</h3>
+        <p class="text-sm text-blue-700">
+          Discover personalized wellness tips and preventive care
+          recommendations.
+        </p>
+        <button
+          data-href="healthTips.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          Get Tips
+        </button>
+      </div>
+
+      <!-- Profile Settings -->
+      <div
+        class="bg-white border border-blue-100 rounded-2xl shadow hover:shadow-lg transition p-6 text-center"
+      >
+        <div class="text-4xl mb-4">
+          <svg
+            class="w-12 h-12 mx-auto text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-[#001F3F]">Profile Settings</h3>
+        <p class="text-sm text-blue-700">
+          Manage your personal information and preferences.
+        </p>
+        <button
+          data-href="settings.html"
+          class="mt-4 w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-400 transition"
+        >
+          Manage Profile
+        </button>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      id="contact"
+      class="bg-blue-900 text-white text-center py-6 text-sm"
+    >
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module" src="js/studentDashboard.js"></script>
+    <script src="js/notification.js"></script>
+    <script src="js/modal.js"></script>
+    <script>
+      // Profile Dropdown
+      const profileBtn = document.getElementById("profileBtn");
+      const profileDropdown = document.getElementById("profileDropdown");
+      profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileDropdown.classList.toggle("hidden");
+      });
+      document.addEventListener("click", () =>
+        profileDropdown.classList.add("hidden")
+      );
+
+      // Dashboard button navigation
+      document.addEventListener("DOMContentLoaded", () => {
+        const buttons = document.querySelectorAll("button[data-href]");
+        buttons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const url = btn.getAttribute("data-href");
+            if (url) window.location.href = url;
+          });
+        });
+      });
+
+      (function () {
+        "use strict";
+
+        function checkAuth() {
+          const token = sessionStorage.getItem("supabase_token");
+          if (!token) {
+            window.location.href = "/landing.html"; // use href, not replace
+            return false;
+          }
+          return true;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+          if (!checkAuth()) return;
+
+          const currentUrl = window.location.href;
+          const userRole = sessionStorage.getItem("user_role");
+
+          // ✅ Make sure dashboard has a proper history state
+          if (!history.state || history.state.page !== "dashboard") {
+            history.replaceState(
+              { page: "dashboard", role: userRole, dashboardUrl: currentUrl },
+              "",
+              currentUrl
+            );
+            console.log("Dashboard base state registered:", currentUrl);
+          }
+
+          // Enhance internal navigation
+          const links = document.querySelectorAll("a[href]");
+          links.forEach((link) => {
+            const href = link.getAttribute("href");
+            if (
+              href &&
+              !href.startsWith("http") &&
+              !href.includes("landing.html")
+            ) {
+              link.addEventListener("click", (e) => {
+                e.preventDefault();
+                history.pushState(
+                  {
+                    page: "dashboard",
+                    role: userRole,
+                    dashboardUrl: currentUrl,
+                  },
+                  "",
+                  currentUrl
+                );
+                window.location.href = href;
+              });
+            }
+          });
+        });
+      })();
+    </script>
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

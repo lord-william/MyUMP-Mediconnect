@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Low Stock Items - MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      :root {
+        --color-navy: #001f3f;
+        --color-yellow: #ffcc00;
+      }
+
+      th .sort-arrow {
+        color: #aaa;
+        visibility: hidden;
+      }
+
+      th.sorted .sort-arrow {
+        visibility: visible;
+        color: #22c55e;
+      }
+
+      th.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.3s ease;
+      }
+
+      th.sortable:hover {
+        color: #007bff;
+        text-decoration: underline;
+      }
+
+      th.sorted {
+        font-weight: bold;
+        background-color: #e0e0e0;
+      }
+
+      th span {
+        visibility: hidden;
+      }
+
+      th.sorted span {
+        visibility: visible;
+      }
+
+      .sort-arrow {
+        margin-left: 6px;
+        font-size: 0.75rem;
+      }
+
+      .low-stock {
+        background-color: #900808;
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body class="bg-white text-[#001F3F] font-sans min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-white text-black shadow p-4 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21" />
+        <div class="hidden md:flex space-x-6">
+          <a href="clinicDashboard.html" class="hover:text-blue-600 transition"
+            >Dashboard</a
+          >
+          <a
+            href="appointmentManagement.html"
+            class="hover:text-blue-600 transition"
+            >Appointments</a
+          >
+          <a
+            href="inventoryManagement.html"
+            class="hover:text-blue-600 transition"
+            >Inventory</a
+          >
+          <a
+            href="reporting&analytics.html"
+            class="hover:text-blue-600 transition"
+            >Reports</a
+          >
+          <a href="staff_add_tip.html" class="hover:text-blue-600 transition"
+            >Add Tips</a
+          >
+        </div>
+        <div class="relative text-sm">
+          <span id="userName" class="mr-2">Clinic Admin</span>
+          <button
+            id="profileBtn"
+            class="bg-blue-400 text-white rounded-full w-8 h-8 font-bold hover:bg-blue-600 transition"
+          >
+            MC
+          </button>
+          <div
+            class="absolute right-0 mt-2 w-40 bg-white text-[#001F3F] rounded shadow-lg hidden"
+            id="profileDropdown"
+          >
+            <a
+              href="landing.html"
+              class="block px-4 py-2 text-red-600 hover:bg-red-100 transition"
+              >Logout</a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- ✅ Notification Containers -->
+    <div
+      id="errorContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-red-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span id="errorMessage">Something went wrong</span>
+    </div>
+
+    <div
+      id="successContainer"
+      class="hidden fixed top-4 right-4 max-w-sm bg-green-500 text-white text-sm rounded-xl shadow-lg p-4 flex items-start gap-3 z-50"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0 mt-0.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="successMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Main content -->
+    <main class="flex-grow">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="mb-6">
+          <h2 class="text-2xl font-semibold text-[#001F3F]">Low Stock Items</h2>
+          <p class="text-[#001F3F] text-sm opacity-70">
+            Note! these items are running low.
+          </p>
+        </div>
+
+        <!-- Filters Panel -->
+        <section
+          class="mb-6 bg-white p-6 rounded-2xl shadow border border-blue-100"
+        >
+          <h3 class="text-xl font-semibold mb-4 text-[#001F3F]">Filters</h3>
+          <form
+            id="filterForm"
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end"
+          >
+            <div>
+              <label for="searchInput" class="block text-sm font-medium mb-1"
+                >Search by Item Name</label
+              >
+              <input
+                type="text"
+                id="searchInput"
+                name="search"
+                placeholder="Enter item name"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label for="quantityExact" class="block text-sm font-medium mb-1"
+                >Exact Quantity</label
+              >
+              <input
+                type="number"
+                id="quantityExact"
+                name="quantityExact"
+                min="0"
+                placeholder="e.g. 5"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div class="md:col-span-2 flex space-x-4 mt-4">
+              <button
+                type="submit"
+                class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400 transition"
+                data-no-loader
+              >
+                Apply Filters
+              </button>
+              <button
+                type="button"
+                id="resetFilters"
+                class="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+                data-no-loader
+              >
+                Reset Filters
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Low Stock Table -->
+        <div
+          class="overflow-x-auto bg-white rounded-2xl shadow border border-blue-100"
+        >
+          <table class="min-w-full text-sm text-left text-[#001F3F]">
+            <thead class="bg-gray-100 text-gray-700">
+              <tr>
+                <th
+                  class="py-2 px-4 sortable"
+                  onclick="sortLowStock('item_name')"
+                >
+                  Item Name ⬍ <span class="sort-arrow"></span>
+                </th>
+                <th
+                  class="py-2 px-4 sortable"
+                  onclick="sortLowStock('quantity')"
+                >
+                  Quantity ⬍ <span class="sort-arrow"></span>
+                </th>
+                <th
+                  class="py-2 px-4 sortable"
+                  onclick="sortLowStock('stock_limit')"
+                >
+                  Stock Limit ⬍ <span class="sort-arrow"></span>
+                </th>
+                <th
+                  class="py-2 px-4 sortable"
+                  onclick="sortLowStock('expiry_date')"
+                >
+                  Expiry Date ⬍ <span class="sort-arrow"></span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="lowStockTableBody" class="divide-y divide-gray-200">
+              <!-- JS will inject rows here -->
+            </tbody>
+          </table>
+        </div>
+
+        <p id="noResults" class="mt-4 text-center text-gray-500 hidden">
+          No items match your criteria.
+        </p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      id="contact"
+      class="bg-blue-900 text-white text-center py-6 text-sm"
+    >
+      <p>© 2025 MediConnect. All rights reserved.</p>
+      <p>Email: campusclinic@ump.ac.za | Phone: +27 76 049 6387</p>
+    </footer>
+
+    <script type="module" src="js/low-stock.js"></script>
+    <script src="js/notification.js"></script>
+    <script src="js/modal.js"></script>
+
+    <script>
+      const profileBtn = document.getElementById("profileBtn");
+      const profileDropdown = document.getElementById("profileDropdown");
+
+      if (profileBtn) {
+        profileBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          profileDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (
+            !profileDropdown.contains(e.target) &&
+            !profileBtn.contains(e.target)
+          ) {
+            profileDropdown.classList.add("hidden");
+          }
+        });
+      }
+    </script>
+    <script src="js/navbar.js"></script>
+  </body>
+</html>

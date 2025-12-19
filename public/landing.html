@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Health Screening</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-white text-gray-900">
+  <!-- Header -->
+  <header class="bg-white border-b border-blue-100 py-4">
+    <div class="container mx-auto flex justify-between items-center px-4">
+         <a href="landing.html">
+      <img src="media/logo2.png" alt="MediConnect Logo" class="h-20 w-21">
+
+      </a>
+      <nav class="flex flex-wrap items-center gap-4">
+        <a href="#features" class="hover:bg-blue-600 hover:text-white px-4 py-2 rounded transition">Features</a>
+        <a href="#how-it-works" class="hover:bg-blue-600 hover:text-white px-4 py-2 rounded transition">How it Works</a>
+        <a href="#contact" class="hover:bg-blue-600 hover:text-white px-4 py-2 rounded transition">Contact</a>
+        <button onclick="window.location.href='login.html'" class="border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-600 hover:text-white transition">Login</button>
+        <button onclick="window.location.href='signup.html'" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Sign Up</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative text-white text-center py-40 px-4 overflow-hidden">
+  <!-- Background video -->
+  <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+    <source src="media/3767959273-preview.mp4" type="video/mp4">
+  </video>
+  
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-[#0a2342]/70"></div>
+  
+  <!-- Content -->
+  <div class="relative z-10">
+    <h2 class="text-4xl font-bold mb-4">Your Campus Health Companion</h2>
+    <p class="text-lg mb-6">Get AI-powered diagnosis, check symptoms, book clinic appointments, and receive health tips — all in one place.</p>
+    <button onclick="window.location.href='signup.html'" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 font-semibold transition">Get Started</button>
+  </div>
+</section>
+
+
+
+  <!-- Features -->
+  <section id="features" class="py-16 px-4 max-w-6xl mx-auto">
+    <h3 class="text-3xl font-semibold text-center text-[#0a2342] mb-10">Features</h3>
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div class="bg-white p-6 border-l-4 border-blue-600 rounded shadow hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">AI Diagnosis</h4>
+        <p>Describe your symptoms and get instant, AI-generated health suggestions.</p>
+      </div>
+      <div class="bg-white p-6 border-l-4 border-blue-600 rounded shadow hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Symptom Checker</h4>
+        <p>Quick and easy self-screening for common issues before visiting the clinic.</p>
+      </div>
+      <div class="bg-white p-6 border-l-4 border-blue-600 rounded shadow hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Book Appointments</h4>
+        <p>Reserve clinic visits online with available time slots for students and staff.</p>
+      </div>
+      <div class="bg-white p-6 border-l-4 border-blue-600 rounded shadow hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Health Tips</h4>
+        <p>Receive curated wellness and preventive care tips directly in your dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="bg-gray-100 py-16 px-4">
+    <h3 class="text-3xl font-semibold text-center text-[#0a2342] mb-10">How It Works</h3>
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-600 text-white font-bold text-xl flex items-center justify-center">1</div>
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Create Account</h4>
+        <p>Sign up with your university credentials and complete your health profile in minutes.</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-600 text-white font-bold text-xl flex items-center justify-center">2</div>
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Health Assessment</h4>
+        <p>Use our AI-powered symptom checker or browse personalized health tips and recommendations.</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-600 text-white font-bold text-xl flex items-center justify-center">3</div>
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Book Appointment</h4>
+        <p>Schedule your clinic visit with real-time availability and receive instant confirmation.</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition text-center">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-600 text-white font-bold text-xl flex items-center justify-center">4</div>
+        <h4 class="text-xl font-semibold mb-2 text-[#0a2342]">Get Care</h4>
+        <p>Receive professional care and continue monitoring your health through our platform.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="bg-[#0a2342] text-white text-center py-16 px-4">
+    <h3 class="text-3xl font-semibold mb-10">Trusted by Students Nationwide</h3>
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+      <div>
+        <p class="text-4xl font-bold text-blue-400 mb-2">25,000+</p>
+        <p>Active Students</p>
+      </div>
+      <div>
+        <p class="text-4xl font-bold text-blue-400 mb-2">98%</p>
+        <p>Satisfaction Rate</p>
+      </div>
+      <div>
+        <p class="text-4xl font-bold text-blue-400 mb-2">50+</p>
+        <p>Partner Universities</p>
+      </div>
+      <div>
+        <p class="text-4xl font-bold text-blue-400 mb-2">24/7</p>
+        <p>AI Support</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section class="bg-gradient-to-br from-gray-100 to-white py-16 px-4 text-center">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg relative">
+      <p class="text-5xl text-blue-600 absolute top-0 left-4">“</p>
+      <p class="italic text-lg mb-4">MediConnect made it so easy to get the health support I needed during exam season. The AI symptom checker helped me understand my stress symptoms, and booking an appointment was effortless. It's like having a health companion right on campus!</p>
+      <p class="font-semibold text-[#0a2342]">— Sarah M., Computer Science Student</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="contact" class="bg-blue-600 text-white text-center py-6 text-sm">
+    <p>© 2025 University Health Services. All rights reserved.</p>
+    <p>Email: campusclinic@university.ac.za | Phone: +27 12 345 6789</p>
+  </footer>
+</body>
+</html>
