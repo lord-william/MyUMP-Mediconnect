@@ -200,16 +200,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the ISC License.
 
----
-
-## 📞 Contact
-
-**MediConnect - University of Mpumalanga Campus Clinic**
-
-- 📧 Email: campusclinic@ump.ac.za
-- 📱 Phone: +27 76 049 6387
-
----
+--
 
 <p align="center">
   <strong>© 2025 MediConnect. All rights reserved.</strong>
